@@ -1,0 +1,20 @@
+// Krypto Programming Language - Hello World Example
+// This is the first example program in Krypto
+
+fun main() {
+    let message = "Hello, World!"
+    print(message)
+    
+    // Variables and arithmetic
+    let x = 10
+    let y = 20
+    let sum = x + y
+    print(sum)
+    
+    // Conditionals
+    if (sum > 25) {
+        print("Sum is greater than 25")
+    } else {
+        print("Sum is 25 or less")
+    }
+}
