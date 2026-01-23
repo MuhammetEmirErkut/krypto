@@ -626,35 +626,42 @@
              ; Parse initializer
              (init-result (parse-expression state5))
              (initializer (car init-result))
-             (state6 (cdr init-result)))
+             (state6 (cdr init-result))
+             ; Expect semicolon
+             (result4 (expect state6 'TOKEN-SEMICOLON "Expected ';' after let statement"))
+             (state7 (cdr result4)))
         (cons (make-let-stmt (token-value name-tok)
                              type-ann
                              initializer
                              is-mutable
                              (token-line let-tok)
                              (token-column let-tok))
-              state6)))))
+              state7)))))
 
 (define (parse-return-statement state)
-  "Parse return statement: 'return' expression?"
+  "Parse return statement: 'return' expression? ';'"
   (let ((ret-tok (parser-current state)))
     (let* ((result1 (expect-keyword state "return" "Expected 'return'"))
            (state1 (cdr result1)))
       ; Check if there's an expression or if we're at end of statement
       (if (or (parser-check state1 'TOKEN-RBRACE)
-              (parser-check state1 'TOKEN-SEMICOLON)
-              (parser-at-end? state1))
-          (cons (make-return-stmt #f
-                                  (token-line ret-tok)
-                                  (token-column ret-tok))
-                state1)
+              (parser-check state1 'TOKEN-SEMICOLON))
+          (let* ((state2 (if (parser-check state1 'TOKEN-SEMICOLON)
+                             (cdr (parser-advance state1))
+                             state1)))
+            (cons (make-return-stmt #f
+                                    (token-line ret-tok)
+                                    (token-column ret-tok))
+                  state2))
           (let* ((expr-result (parse-expression state1))
                  (expr (car expr-result))
-                 (state2 (cdr expr-result)))
+                 (state2 (cdr expr-result))
+                 (result2 (expect state2 'TOKEN-SEMICOLON "Expected ';' after return statement"))
+                 (state3 (cdr result2)))
             (cons (make-return-stmt expr
                                     (token-line ret-tok)
                                     (token-column ret-tok))
-                  state2))))))
+                  state3))))))
 
 (define (parse-if-statement state)
   "Parse if statement: 'if' '(' expression ')' block ('else' (ifStmt | block))?"
@@ -726,16 +733,67 @@
                              (token-column while-tok))
             state5))))
 
+(define (parse-for-statement state)
+  "Parse for statement: 'for' '(' init? ';' condition? ';' update? ')' block"
+  (let ((for-tok (parser-current state)))
+    (let* ((result1 (expect-keyword state "for" "Expected 'for'"))
+           (state1 (cdr result1))
+           ; Expect '('
+           (result2 (expect state1 'TOKEN-LPAREN "Expected '(' after 'for'"))
+           (state2 (cdr result2)))
+      ; Parse init (optional - can be let statement or expression or empty)
+      (let* ((init-result (if (parser-check state2 'TOKEN-SEMICOLON)
+                              (cons #f state2)  ; No init
+                              (if (parser-check-keyword state2 "let")
+                                  (parse-let-statement state2)
+                                  (parse-expression state2))))
+             (init (car init-result))
+             (state3 (cdr init-result))
+             ; Expect ';' (if not already consumed by let)
+             (state4 (if (and init (let-stmt? init))
+                         state3
+                         (cdr (expect state3 'TOKEN-SEMICOLON "Expected ';' after for init"))))
+             ; Parse condition (optional)
+             (cond-result (if (parser-check state4 'TOKEN-SEMICOLON)
+                              (cons #f state4)  ; No condition (infinite loop)
+                              (parse-expression state4)))
+             (condition (car cond-result))
+             (state5 (cdr cond-result))
+             ; Expect ';'
+             (result4 (expect state5 'TOKEN-SEMICOLON "Expected ';' after for condition"))
+             (state6 (cdr result4))
+             ; Parse update (optional)
+             (update-result (if (parser-check state6 'TOKEN-RPAREN)
+                                (cons #f state6)  ; No update
+                                (parse-expression state6)))
+             (update (car update-result))
+             (state7 (cdr update-result))
+             ; Expect ')'
+             (result5 (expect state7 'TOKEN-RPAREN "Expected ')' after for clauses"))
+             (state8 (cdr result5))
+             ; Parse body
+             (body-result (parse-block state8))
+             (body (car body-result))
+             (state9 (cdr body-result)))
+        (cons (make-for-stmt init condition update body
+                             (token-line for-tok)
+                             (token-column for-tok))
+              state9)))))
+
+
 (define (parse-expression-statement state)
   "Parse expression statement"
   (let* ((expr-result (parse-expression state))
          (expr (car expr-result))
          (state1 (cdr expr-result))
-         (tok (parser-current state)))
+         (tok (parser-current state))
+         ; Expect semicolon
+         (result (expect state1 'TOKEN-SEMICOLON "Expected ';' after expression"))
+         (state2 (cdr result)))
     (cons (make-expr-stmt expr
                           (token-line tok)
                           (token-column tok))
-          state1)))
+          state2)))
 
 (define (parse-statement state)
   "Parse a statement"
@@ -748,10 +806,13 @@
      (parse-if-statement state))
     ((parser-check-keyword state "while")
      (parse-while-statement state))
+    ((parser-check-keyword state "for")
+     (parse-for-statement state))
     ((parser-check state 'TOKEN-LBRACE)
      (parse-block state))
     (else
      (parse-expression-statement state))))
+
 
 ; ----------------------------------------------------------------------------
 ; Declaration Parsing
@@ -783,6 +844,256 @@
                 (loop new-params (cdr result)))
               (cons new-params state3))))))
 
+
+(define (parse-struct-fields state)
+  "Parse struct fields: '{' (IDENTIFIER ':' type (',' | ';')?)* '}'"
+  (let ((brace-tok (parser-current state)))
+    (let* ((result1 (expect state 'TOKEN-LBRACE "Expected '{' for struct fields"))
+           (state1 (cdr result1)))
+      (let loop ((fields '()) (state state1))
+        (if (or (parser-at-end? state)
+                (parser-check state 'TOKEN-RBRACE))
+            (let ((result (expect state 'TOKEN-RBRACE "Expected '}' after struct fields")))
+              (cons (reverse fields) (cdr result)))
+            (let* ((result2 (expect state 'TOKEN-IDENTIFIER "Expected field name"))
+                   (name-tok (car result2))
+                   (state2 (cdr result2))
+                   ; Expect ':'
+                   (result3 (expect state2 'TOKEN-COLON "Expected ':' after field name"))
+                   (state3 (cdr result3))
+                   ; Parse type
+                   (type-result (parse-type state3))
+                   (field-type (car type-result))
+                   (state4 (cdr type-result))
+                   ; Create field
+                   (field (make-field (token-value name-tok)
+                                     field-type
+                                     (token-line name-tok)
+                                     (token-column name-tok)))
+                   (new-fields (append fields (list field)))
+                   ; Optional comma or semicolon
+                   (state5 (if (or (parser-check state4 'TOKEN-COMMA)
+                                   (parser-check state4 'TOKEN-SEMICOLON))
+                               (cdr (parser-advance state4))
+                               state4)))
+              (loop new-fields state5)))))))
+
+(define (parse-class-members state)
+  "Parse class members: fields and methods"
+  (let ((brace-tok (parser-current state)))
+    (let* ((result1 (expect state 'TOKEN-LBRACE "Expected '{' for class body"))
+           (state1 (cdr result1)))
+      (let loop ((fields '()) (methods '()) (state state1))
+        (cond
+          ((or (parser-at-end? state)
+               (parser-check state 'TOKEN-RBRACE))
+           (let ((result (expect state 'TOKEN-RBRACE "Expected '}' after class body")))
+             (cons (list (reverse fields) (reverse methods))
+                   (cdr result))))
+          
+          ; Method declaration: fun name(...) { ... }
+          ((parser-check-keyword state "fun")
+           (let* ((decl-result (parse-function-declaration state #f)) ; void return default
+                  (method (car decl-result))
+                  (state2 (cdr decl-result)))
+             (loop fields (cons method methods) state2)))
+          
+          ; Identifier -> Field (Name: Type) or Method (Name(...) { }) ? 
+          ; Wait, syntax in example is 'name: string'.
+          ; If it is a method, it starts with return type (void fun ...).
+          ; IF it is a field, it starts with Identifier.
+          ; We need to distinguish:
+          ; 1. 'void fun name()' -> Method with return type
+          ; 2. 'fun name()' -> Method, void implicit
+          ; 3. 'name: type' -> Field
+          
+          ; Case 1 is handled by IsTypeKeyword check.
+          ; Case 2 is handled by 'fun' check.
+          ; Case 3 starts with Identifier.
+          
+          ((eq? (token-type (parser-current state)) 'TOKEN-IDENTIFIER)
+           (let* ((name-tok (parser-current state))
+                  (res0 (parser-advance state))
+                  (state1 (cdr res0)))
+             (if (parser-check state1 'TOKEN-COLON)
+                 ; Field: Name : Type
+                 (let* ((res1 (parser-advance state1)) ; Skip ':'
+                        (st1 (cdr res1))
+                        (type-res (parse-type st1))
+                        (field-type (car type-res))
+                        (st2 (cdr type-res))
+                        ; Logic for optional init...
+                        ; Semicolon optional?
+                         (res3 (if (or (parser-check st2 'TOKEN-COMMA)
+                                      (parser-check st2 'TOKEN-SEMICOLON))
+                                  (parser-advance st2)
+                                  (cons #f st2)))
+                         (st3 (cdr res3))
+                         (field (make-field (token-value name-tok)
+                                            field-type
+                                            (token-line name-tok)
+                                            (token-column name-tok))))
+                   (loop (cons field fields) methods st3))
+                 
+                 ; Not a colon? Maybe 'Identifier fun ...'? (Method with named type return)
+                 (if (parser-check-keyword state1 "fun")
+                     ; Method with identifier return type
+                     (let* ((type-res (parse-type state)) ; Parse the type from original state
+                            (ret-type (car type-res))
+                            (st (cdr type-res))
+                            (decl-res (parse-function-declaration st ret-type))
+                            (method (car decl-res))
+                            (st2 (cdr decl-res)))
+                        (loop fields (cons method methods) st2))
+                     
+                     (parse-error state1 "Expected ':' for field or 'fun' for method")))))
+          
+          ; Primitive Type -> Method with primitive return type
+          ((is-type-keyword? (parser-current state))
+           (let* ((type-res (parse-type state))
+                  (ret-type (car type-res))
+                  (st (cdr type-res)))
+             (if (parser-check-keyword st "fun")
+                 (let* ((decl-res (parse-function-declaration st ret-type))
+                        (method (car decl-res))
+                        (st2 (cdr decl-res)))
+                   (loop fields (cons method methods) st2))
+                 (parse-error st "Expected 'fun' after type in class member"))))
+             
+          (else
+           (parse-error state "Expected class member")))))))
+
+(define (parse-class-declaration state)
+  "Parse class declaration: 'class' IDENTIFIER ('extends' ID)? ('implements' ID+)? '{' members '}'"
+  (let ((class-tok (parser-current state)))
+    (let* ((result1 (expect-keyword state "class" "Expected 'class'"))
+           (state1 (cdr result1))
+           ; Get class name
+           (result2 (expect state1 'TOKEN-IDENTIFIER "Expected class name"))
+           (name-tok (car result2))
+           (state2 (cdr result2))
+           
+           ; Extends (optional)
+           (extends-check (parser-check-keyword state2 "extends"))
+           (parent-info (if extends-check
+                            (let* ((st (cdr (parser-advance state2)))
+                                   (res (expect st 'TOKEN-IDENTIFIER "Expected parent class name")))
+                              (cons (token-value (car res)) (cdr res)))
+                            (cons #f state2)))
+           (parent (car parent-info))
+           (state3 (cdr parent-info))
+           
+           ; Implements (optional)
+           (implements-check (parser-check-keyword state3 "implements"))
+           (interfaces-info (if implements-check
+                                (let loop-impl ((ifaces '()) (st (cdr (parser-advance state3))))
+                                  (let* ((res (expect st 'TOKEN-IDENTIFIER "Expected interface name"))
+                                         (iface (token-value (car res)))
+                                         (st2 (cdr res))
+                                         (new-ifaces (append ifaces (list iface))))
+                                    (if (parser-check st2 'TOKEN-COMMA)
+                                        (loop-impl new-ifaces (cdr (parser-advance st2)))
+                                        (cons new-ifaces st2))))
+                                (cons '() state3)))
+           (interfaces (car interfaces-info))
+           (state4 (cdr interfaces-info))
+           
+           ; Parse body
+           (members-result (parse-class-members state4))
+           (members (car members-result))
+           (fields (car members))
+           (methods (cadr members))
+           (state5 (cdr members-result)))
+           
+      (cons (make-class-decl (token-value name-tok)
+                             parent
+                             interfaces
+                             fields
+                             methods
+                             (token-line class-tok)
+                             (token-column class-tok))
+            state5))))
+
+(define (parse-interface-declaration state)
+  "Parse interface declaration: 'interface' IDENTIFIER '{' methods '}'"
+  (let ((iface-tok (parser-current state)))
+    (let* ((result1 (expect-keyword state "interface" "Expected 'interface'"))
+           (state1 (cdr result1))
+           ; Get interface name
+           (result2 (expect state1 'TOKEN-IDENTIFIER "Expected interface name"))
+           (name-tok (car result2))
+           (state2 (cdr result2))
+           ; Interface body
+           (result3 (expect state2 'TOKEN-LBRACE "Expected '{'"))
+           (state3 (cdr result3)))
+      (let loop ((methods '()) (state state3))
+        (if (or (parser-at-end? state)
+                (parser-check state 'TOKEN-RBRACE))
+            (let ((result (expect state 'TOKEN-RBRACE "Expected '}'")))
+              (cons (make-interface-decl (token-value name-tok)
+                                         (reverse methods)
+                                         (token-line iface-tok)
+                                         (token-column iface-tok))
+                    (cdr result)))
+            (cond
+              ; Type fun name(...)
+              ((or (is-type-keyword? (parser-current state))
+                   (eq? (token-type (parser-current state)) 'TOKEN-IDENTIFIER))
+               (let* ((type-result (parse-type state))
+                      (ret-type (car type-result))
+                      (state2 (cdr type-result)))
+                 (if (parser-check-keyword state2 "fun")
+                     (let* ((fun-tok (parser-current state2))
+                            (res1 (parser-advance state2)) ; Skip 'fun'
+                            (st1 (cdr res1))
+                            (res2 (expect st1 'TOKEN-IDENTIFIER "Expected function name"))
+                            (name-tok (car res2))
+                            (st2 (cdr res2))
+                            (res3 (expect st2 'TOKEN-LPAREN "Expected '('"))
+                            (st3 (cdr res3))
+                            (params-res (parse-parameters st3))
+                            (params (car params-res))
+                            (st4 (cdr params-res))
+                            (res4 (expect st4 'TOKEN-RPAREN "Expected ')'"))
+                            (st5 (cdr res4))
+                            ; No body for interface methods
+                            (method (make-fun-decl (token-value name-tok)
+                                                 params
+                                                 ret-type
+                                                 #f ; No body
+                                                 (token-line fun-tok)
+                                                 (token-column fun-tok))))
+                       (loop (cons method methods) st5))
+                     (parse-error state2 "Expected 'fun' in interface method"))))
+              
+              ; fun name(...)
+              ((parser-check-keyword state "fun")
+               (let* ((fun-tok (parser-current state))
+                      (res1 (parser-advance state)) ; Skip 'fun'
+                      (st1 (cdr res1))
+                      (res2 (expect st1 'TOKEN-IDENTIFIER "Expected function name"))
+                      (name-tok (car res2))
+                      (st2 (cdr res2))
+                      (res3 (expect st2 'TOKEN-LPAREN "Expected '('"))
+                      (st3 (cdr res3))
+                      (params-res (parse-parameters st3))
+                      (params (car params-res))
+                      (st4 (cdr params-res))
+                      (res4 (expect st4 'TOKEN-RPAREN "Expected ')'"))
+                      (st5 (cdr res4))
+                      ; No body
+                      (method (make-fun-decl (token-value name-tok)
+                                           params
+                                           #f ; void
+                                           #f ; No body
+                                           (token-line fun-tok)
+                                           (token-column fun-tok))))
+                 (loop (cons method methods) st5)))
+                 
+              (else
+               (parse-error state "Expected method signature"))))))))
+
+
 (define (parse-function-declaration state return-type)
   "Parse function declaration: type? 'fun' IDENTIFIER '(' params? ')' block"
   (let ((fun-tok (parser-current state)))
@@ -802,17 +1113,28 @@
            ; Expect ')'
            (result4 (expect state4 'TOKEN-RPAREN "Expected ')' after parameters"))
            (state5 (cdr result4))
+           
+           ; Check for return type arrow (->)
+           (arrow-check (parser-check state5 'TOKEN-ARROW))
+           (type-res (if arrow-check
+                         (let* ((res (parser-advance state5))
+                                (st (cdr res)))
+                           (parse-type st))
+                         (cons return-type state5)))
+           (parsed-ret-type (car type-res))
+           (state6 (cdr type-res))
+
            ; Parse body
-           (body-result (parse-block state5))
+           (body-result (parse-block state6))
            (body (car body-result))
-           (state6 (cdr body-result)))
+           (state7 (cdr body-result)))
       (cons (make-fun-decl (token-value name-tok)
                            params
-                           return-type
+                           parsed-ret-type
                            body
                            (token-line fun-tok)
                            (token-column fun-tok))
-            state6))))
+            state7))))
 
 (define (is-type-keyword? tok)
   "Check if token is a type keyword"
@@ -820,9 +1142,18 @@
        (member (token-value tok) '("int" "float" "string" "bool" "void"))))
 
 (define (parse-declaration state)
-  "Parse a declaration (function or statement)"
+  "Parse a declaration (function, struct, or statement)"
   (let ((tok (parser-current state)))
     (cond
+      ; Class declaration
+      ((parser-check-keyword state "class")
+       (parse-class-declaration state))
+
+      ; Interface declaration
+      ((parser-check-keyword state "interface")
+       (parse-interface-declaration state))
+      
+
       ; Type followed by 'fun' -> function with return type
       ((and (or (is-type-keyword? tok)
                 (eq? (token-type tok) 'TOKEN-IDENTIFIER))

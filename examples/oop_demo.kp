@@ -1,0 +1,52 @@
+// Krypto Programming Language - OOP Example
+
+interface Animal {
+    void fun makeSound()
+    void fun move()
+}
+
+class Dog implements Animal {
+    name: string
+    age: int
+
+    void fun makeSound() {
+        print("Woof!")
+    }
+
+    void fun move() {
+        print("Running...")
+    }
+
+    void fun bark() {
+        print(name)
+        print(" says: Woof!")
+    }
+}
+
+class Cat implements Animal {
+    name: string
+
+    void fun makeSound() {
+        print("Meow!")
+    }
+
+    void fun move() {
+        print("Walking gracefully...")
+    }
+}
+
+fun main() {
+    print("--- OOP Example ---")
+    // Note: 'new' keyword is processed as function call or special token in lexer?
+    // Lexer has 'new' keyword. Parser treats it how?
+    // Current class parsing doesn't specifically handle 'new' in expressions yet.
+    // It treats ClassName(...) as CallExpression.
+    // So let's use functional construction for now if 'new' isn't fully implemented in expression parser.
+    // Wait, I didn't update expression parser to handle 'new'.
+    
+    // For now, testing declaration parsing primarily.
+    
+    // let dog = Dog("Buddy", 3)
+    // dog.makeSound()
+    // dog.bark()
+}

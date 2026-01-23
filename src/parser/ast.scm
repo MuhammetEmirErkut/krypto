@@ -272,35 +272,27 @@
                  'type type
                  'location (make-location line col)))
 
-;; Struct declaration
-;; (struct-decl name fields location)
+;; Class declaration
+;; (class-decl name parent interfaces fields methods location)
 
-(define (make-struct-decl name fields line col)
-  "Create a struct declaration node"
-  (make-ast-node 'struct-decl
+(define (make-class-decl name parent interfaces fields methods line col)
+  "Create a class declaration node"
+  (make-ast-node 'class-decl
                  'name name
-                 'fields fields  ; list of field nodes
-                 'location (make-location line col)))
-
-;; Trait declaration
-;; (trait-decl name methods location)
-
-(define (make-trait-decl name methods line col)
-  "Create a trait declaration node"
-  (make-ast-node 'trait-decl
-                 'name name
-                 'methods methods  ; list of method signatures
-                 'location (make-location line col)))
-
-;; Impl declaration
-;; (impl-decl type-name trait-name methods location)
-
-(define (make-impl-decl type-name trait-name methods line col)
-  "Create an impl declaration node"
-  (make-ast-node 'impl-decl
-                 'type-name type-name
-                 'trait-name trait-name  ; can be #f for inherent impl
+                 'parent parent          ; parent class name or #f
+                 'interfaces interfaces  ; list of interface names
+                 'fields fields          ; list of field nodes
                  'methods methods        ; list of fun-decl nodes
+                 'location (make-location line col)))
+
+;; Interface declaration
+;; (interface-decl name methods location)
+
+(define (make-interface-decl name methods line col)
+  "Create an interface declaration node"
+  (make-ast-node 'interface-decl
+                 'name name
+                 'methods methods  ; list of method signatures (fun-decl without body or stripped)
                  'location (make-location line col)))
 
 ; ----------------------------------------------------------------------------
@@ -377,9 +369,8 @@
 (define (block-stmt? node) (eq? (ast-type node) 'block-stmt))
 
 (define (fun-decl? node) (eq? (ast-type node) 'fun-decl))
-(define (struct-decl? node) (eq? (ast-type node) 'struct-decl))
-(define (trait-decl? node) (eq? (ast-type node) 'trait-decl))
-(define (impl-decl? node) (eq? (ast-type node) 'impl-decl))
+(define (class-decl? node) (eq? (ast-type node) 'class-decl))
+(define (interface-decl? node) (eq? (ast-type node) 'interface-decl))
 
 (define (program? node) (eq? (ast-type node) 'program))
 

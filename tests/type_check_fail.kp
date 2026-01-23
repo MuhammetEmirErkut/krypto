@@ -1,0 +1,10 @@
+let x: int = "string"; // Error 1
+
+fun add(a: int, b: int) -> int {
+    return "result"; // Error 2
+}
+
+let y: int = 10;
+let z: bool = y + 5; // Error 3
+
+add(10, "20"); // Error 4
