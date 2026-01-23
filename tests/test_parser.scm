@@ -370,6 +370,30 @@
                   "fib"
                   (ast-get func 'name))))
 
+(define (test-for-statement)
+  "Test parsing for statements"
+  (let* ((ast (parse "for (let i = 0; i < 10; i = i + 1) { print(i) }"))
+         (decls (ast-get ast 'declarations))
+         (stmt (car decls)))
+    (assert-true "for stmt parsed"
+                 (for-stmt? stmt))
+    (assert-true "has condition"
+                 (not (eq? (ast-get stmt 'condition) #f)))))
+
+(define (test-struct-declaration)
+  "Test parsing struct declarations"
+  (let* ((ast (parse "struct Point { x: int, y: int }"))
+         (decls (ast-get ast 'declarations))
+         (struct-node (car decls)))
+    (assert-true "struct decl parsed"
+                 (struct-decl? struct-node))
+    (assert-equal "struct name"
+                  "Point"
+                  (ast-get struct-node 'name))
+    (assert-equal "field count"
+                  2
+                  (length (ast-get struct-node 'fields)))))
+
 ; ----------------------------------------------------------------------------
 ; Run All Tests
 ; ----------------------------------------------------------------------------
@@ -414,7 +438,13 @@
   (test-function-with-return-type)
   (test-fibonacci-function)
   
+  (newline)
+  (display "--- Advanced Features Tests ---\n")
+  (test-for-statement)
+  (test-struct-declaration)
+  
   (print-summary))
+
 
 ; Run tests
 (run-all-tests)
