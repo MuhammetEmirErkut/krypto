@@ -10,16 +10,16 @@ class Dog implements Animal {
     age: int
 
     void fun makeSound() {
-        print("Woof!")
+        print("Woof!");
     }
 
     void fun move() {
-        print("Running...")
+        print("Running...");
     }
 
     void fun bark() {
-        print(name)
-        print(" says: Woof!")
+        print(name);
+        print(" says: Woof!");
     }
 }
 
@@ -27,16 +27,16 @@ class Cat implements Animal {
     name: string
 
     void fun makeSound() {
-        print("Meow!")
+        print("Meow!");
     }
 
     void fun move() {
-        print("Walking gracefully...")
+        print("Walking gracefully...");
     }
 }
 
 fun main() {
-    print("--- OOP Example ---")
+    print("--- OOP Example ---");
     // Note: 'new' keyword is processed as function call or special token in lexer?
     // Lexer has 'new' keyword. Parser treats it how?
     // Current class parsing doesn't specifically handle 'new' in expressions yet.
@@ -44,9 +44,8 @@ fun main() {
     // So let's use functional construction for now if 'new' isn't fully implemented in expression parser.
     // Wait, I didn't update expression parser to handle 'new'.
     
-    // For now, testing declaration parsing primarily.
-    
-    // let dog = Dog("Buddy", 3)
-    // dog.makeSound()
-    // dog.bark()
+    // Phase 5 Todo: Class Instantiation
+    // let dog = Dog("Buddy", 3);
+    // dog.makeSound();
+    // dog.bark();
 }

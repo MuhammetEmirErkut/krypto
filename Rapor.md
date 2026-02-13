@@ -227,18 +227,88 @@
 
 ---
 
+## 24-26 Ocak 2026 (Hafta Sonu)
+- Interpreter mimarisi araştırıldı (Tree-walking vs Bytecode).
+- `src/interpreter/` dizin yapısı oluşturuldu.
+
+## 27 Ocak 2026 (Pazartesi)
+- `src/interpreter/interpreter.scm` dosyası oluşturuldu.
+- Temel `eval-node` dispatcher fonksiyonu yazıldı.
+- Literal expression evaluation (integer, float, string, bool) eklendi.
+
+## 28 Ocak 2026 (Salı)
+- `src/interpreter/environment.scm` modülü yazıldı.
+- Scope zinciri (environment chaining) mantığı kuruldu.
+- `make-env`, `env-get`, `env-define!` fonksiyonları implemente edildi.
+
+## 29 Ocak 2026 (Çarşamba)
+- Variable lookup ve assignment desteği eklendi.
+- Binary ve Unary operatörlerin evaluation mantığı yazıldı (`+`, `-`, `*`, `/`, `!`, `-`).
+
+## 30-31 Ocak 2026 (Perşembe - Cuma)
+- Blok statement (`{ ... }`) desteği ve yeni scope oluşturma mantığı.
+- `let` statement evaluation eklendi.
+- Basit expression statement'ların çalıştırılması.
+
+## 1-2 Şubat 2026 (Hafta Sonu)
+- Boş geçti.
+
+## 3 Şubat 2026 (Pazartesi)
+- Control Flow implementasyonu başladı.
+- `if-else` statement evaluation mantığı yazıldı.
+- `truthy?` helper fonksiyonu eklendi.
+
+## 4 Şubat 2026 (Salı)
+- Loop yapıları (`while`, `for`) eklendi.
+- Infinite loop koruması ve condition evaluation test edildi.
+
+## 5-7 Şubat 2026 (Çarşamba - Cuma)
+- Fonksiyon deklarasyonu (`fun-decl`) evaluation desteği.
+- Fonksiyonların environment'a kaydedilmesi.
+- `krypto-function` yapısı `environment.scm` içine eklendi.
+
+## 8-9 Şubat 2026 (Hafta Sonu)
+- User-defined fonksiyon çağırma mekanizması (`call-function`).
+- Parametre eşleştirme ve yeni scope oluşturma.
+
+## 10 Şubat 2026 (Salı)
+- `return` statement ve call stack yönetimi.
+- `return-signal` mekanizması ile derinlikten dönüş değeri taşıma.
+
+## 11 Şubat 2026 (Çarşamba)
+- Built-in fonksiyon altyapısı kuruldu.
+- `print` ve `input` fonksiyonları eklendi.
+- Recursive fonksiyon testleri yapıldı (Factorial, Fibonacci).
+
+## 12 Şubat 2026 (Perşembe)
+- `tests/test_interpreter.scm` yazılmaya başlandı.
+- Test case'ler oluşturuldu ancak parser hataları (semicolon) fark edildi.
+
+---
+
+## 13 Şubat 2026 (Cuma)
+- Faz 4 Interpreter (AST Walker) tamamlandı.
+- Environment modeli (Environment Chains) implemente edildi.
+- Değişken tanımlama, atama ve kapsam (scope) yönetimi eklendi.
+- Kontrol akışı (if, while, for) ve fonksiyon çağrıları çalışır durumda.
+- Built-in fonksiyonlar (`print`, `input`) eklendi.
+- `tests/test_interpreter.scm` düzeltildi ve tüm testler (38/38) geçti.
+
+---
+
 ## Tamamlanan Fazlar
 ✅ **Faz 0: Hazırlık** - Scheme temelleri öğrenildi
 ✅ **Faz 1: Lexer** - Token üretimi tamam (446 satır, 17 test)
 ✅ **Faz 2: Parser** - AST üretimi tamam (Arrow syntax dahil, ~1200 satır)
 ✅ **Faz 3: Semantik Analiz** - Type Checking ve Scope Resolution tamam
+✅ **Faz 4: Interpreter** - İlk çalışan MVP (Kod Yürütme) tamamlandı
 
 ## Sıradaki Fazlar
-📍 **Faz 4: Interpreter** - İlk çalışan MVP (Kod Yürütme)
-⏳ **Faz 5: Gelişmiş Özellikler** - Closures, daha fazla struct özelliği
+📍 **Faz 5: Gelişmiş Özellikler** - Closures, struct array, classes, interfaces
+⏳ **Faz 6: Optimizasyon** - Performans iyileştirmeleri ve GC entegrasyonu
 
 ## Sıradaki Adımlar
-- Interpreter AST Walker yazımı
-- Değişken ve memory modeli (Environment)
-- Fonksiyon çağrı stack yönetimi
+- Struct/Class implementasyonu
+- Closure desteğinin geliştirilmesi
+- Array desteği
 

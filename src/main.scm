@@ -6,18 +6,18 @@
 (import (chezscheme))
 
 ; Load core modules
-(load "lexer/lexer.scm")
-(load "parser/ast.scm")
-(load "parser/parser.scm")
+(load "src/lexer/lexer.scm")
+(load "src/parser/ast.scm")
+(load "src/parser/parser.scm")
 
 ; Load Semantic Analysis Modules
-(load "semantic/types.scm")
-(load "semantic/symbol-table.scm")
-(load "semantic/analyzer.scm")
+(load "src/semantic/types.scm")
+(load "src/semantic/symbol-table.scm")
+(load "src/semantic/analyzer.scm")
 
 ; Load Interpreter Modules
-(load "interpreter/environment.scm")
-(load "interpreter/interpreter.scm")
+(load "src/interpreter/environment.scm")
+(load "src/interpreter/interpreter.scm")
 
 ; Import Libraries
 (import (semantic types))

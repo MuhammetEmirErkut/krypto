@@ -3,18 +3,18 @@
 ; ============================================================================
 
 ; Load dependencies in correct order
-(load "../src/lexer/lexer.scm")
-(load "../src/parser/ast.scm")
-(load "../src/parser/parser.scm")
-(load "../src/semantic/types.scm")
-(load "../src/semantic/symbol-table.scm")
-(load "../src/semantic/analyzer.scm")
-(load "../src/interpreter/environment.scm")
-(load "../src/interpreter/interpreter.scm")
+(load "src/lexer/lexer.scm")
+(load "src/parser/ast.scm")
+(load "src/parser/parser.scm")
+(load "src/semantic/types.scm")
+(load "src/semantic/symbol-table.scm")
+(load "src/semantic/analyzer.scm")
+(load "src/interpreter/environment.scm")
+(load "src/interpreter/interpreter.scm")
 
-(import (chezscheme))
-(import (semantic types))
-(import (semantic symbol-table))
+;(import (chezscheme))
+;(import (semantic types))
+;(import (semantic symbol-table))
 
 ; ----------------------------------------------------------------------------
 ; Test Helpers
@@ -99,24 +99,24 @@
 
 (define (test-integer-eval)
   "Test evaluating integer literals"
-  (assert-equal "integer literal 42" 42 (eval-expr "42"))
-  (assert-equal "integer literal 0" 0 (eval-expr "0"))
-  (assert-equal "integer literal 100" 100 (eval-expr "100")))
+  (assert-equal "integer literal 42" 42 (eval-expr "42;"))
+  (assert-equal "integer literal 0" 0 (eval-expr "0;"))
+  (assert-equal "integer literal 100" 100 (eval-expr "100;")))
 
 (define (test-float-eval)
   "Test evaluating float literals"
-  (assert-equal "float literal 3.14" 3.14 (eval-expr "3.14"))
-  (assert-equal "float literal 0.5" 0.5 (eval-expr "0.5")))
+  (assert-equal "float literal 3.14" 3.14 (eval-expr "3.14;"))
+  (assert-equal "float literal 0.5" 0.5 (eval-expr "0.5;")))
 
 (define (test-string-eval)
   "Test evaluating string literals"
-  (assert-equal "string literal" "hello" (eval-expr "\"hello\""))
-  (assert-equal "empty string" "" (eval-expr "\"\"")))
+  (assert-equal "string literal" "hello" (eval-expr "\"hello\";"))
+  (assert-equal "empty string" "" (eval-expr "\"\";")))
 
 (define (test-bool-eval)
   "Test evaluating boolean literals"
-  (assert-equal "true literal" #t (eval-expr "true"))
-  (assert-equal "false literal" #f (eval-expr "false")))
+  (assert-equal "true literal" #t (eval-expr "true;"))
+  (assert-equal "false literal" #f (eval-expr "false;")))
 
 ; ----------------------------------------------------------------------------
 ; Arithmetic Tests
@@ -124,31 +124,31 @@
 
 (define (test-arithmetic)
   "Test arithmetic operations"
-  (assert-equal "addition" 5 (eval-expr "2 + 3"))
-  (assert-equal "subtraction" 7 (eval-expr "10 - 3"))
-  (assert-equal "multiplication" 12 (eval-expr "3 * 4"))
-  (assert-equal "division" 5 (eval-expr "10 / 2"))
-  (assert-equal "complex expr" 14 (eval-expr "2 + 3 * 4"))
-  (assert-equal "grouped expr" 20 (eval-expr "(2 + 3) * 4")))
+  (assert-equal "addition" 5 (eval-expr "2 + 3;"))
+  (assert-equal "subtraction" 7 (eval-expr "10 - 3;"))
+  (assert-equal "multiplication" 12 (eval-expr "3 * 4;"))
+  (assert-equal "division" 5 (eval-expr "10 / 2;"))
+  (assert-equal "complex expr" 14 (eval-expr "2 + 3 * 4;"))
+  (assert-equal "grouped expr" 20 (eval-expr "(2 + 3) * 4;")))
 
 (define (test-comparison)
   "Test comparison operations"
-  (assert-equal "less than true" #t (eval-expr "1 < 2"))
-  (assert-equal "less than false" #f (eval-expr "2 < 1"))
-  (assert-equal "greater than" #t (eval-expr "5 > 3"))
-  (assert-equal "equal" #t (eval-expr "5 == 5"))
-  (assert-equal "not equal" #t (eval-expr "5 != 3"))
-  (assert-equal "less equal" #t (eval-expr "5 <= 5"))
-  (assert-equal "greater equal" #t (eval-expr "5 >= 3")))
+  (assert-equal "less than true" #t (eval-expr "1 < 2;"))
+  (assert-equal "less than false" #f (eval-expr "2 < 1;"))
+  (assert-equal "greater than" #t (eval-expr "5 > 3;"))
+  (assert-equal "equal" #t (eval-expr "5 == 5;"))
+  (assert-equal "not equal" #t (eval-expr "5 != 3;"))
+  (assert-equal "less equal" #t (eval-expr "5 <= 5;"))
+  (assert-equal "greater equal" #t (eval-expr "5 >= 3;")))
 
 (define (test-unary)
   "Test unary operations"
-  (assert-equal "negate" -5 (eval-expr "-5"))
-  (assert-equal "negate expression" -7 (eval-expr "-(3 + 4)")))
+  (assert-equal "negate" -5 (eval-expr "-5;"))
+  (assert-equal "negate expression" -7 (eval-expr "-(3 + 4);")))
 
 (define (test-string-concat)
   "Test string concatenation"
-  (assert-equal "string concat" "helloworld" (eval-expr "\"hello\" + \"world\"")))
+  (assert-equal "string concat" "helloworld" (eval-expr "\"hello\" + \"world\";")))
 
 ; ----------------------------------------------------------------------------
 ; Variable and Print Tests
@@ -156,17 +156,17 @@
 
 (define (test-let-and-print)
   "Test let statement and print"
-  (let ((output (run-and-capture "let x = 42\nprint(x)")))
+  (let ((output (run-and-capture "let x = 42;\nprint(x);")))
     (assert-equal "let and print" "42\n" output)))
 
 (define (test-variable-assignment)
   "Test variable assignment"
-  (let ((output (run-and-capture "let x = 10\nx = 20\nprint(x)")))
+  (let ((output (run-and-capture "let x = 10;\nx = 20;\nprint(x);")))
     (assert-equal "variable assignment" "20\n" output)))
 
 (define (test-multiple-variables)
   "Test multiple variables"
-  (let ((output (run-and-capture "let a = 5\nlet b = 10\nlet c = a + b\nprint(c)")))
+  (let ((output (run-and-capture "let a = 5;\nlet b = 10;\nlet c = a + b;\nprint(c);")))
     (assert-equal "multiple variables" "15\n" output)))
 
 ; ----------------------------------------------------------------------------
@@ -175,27 +175,27 @@
 
 (define (test-if-true)
   "Test if with true condition"
-  (let ((output (run-and-capture "if (true) { print(\"yes\") }")))
+  (let ((output (run-and-capture "if (true) { print(\"yes\"); }")))
     (assert-equal "if true" "yes\n" output)))
 
 (define (test-if-false)
   "Test if with false condition"
-  (let ((output (run-and-capture "if (false) { print(\"yes\") } else { print(\"no\") }")))
+  (let ((output (run-and-capture "if (false) { print(\"yes\"); } else { print(\"no\"); }")))
     (assert-equal "if false" "no\n" output)))
 
 (define (test-if-comparison)
   "Test if with comparison"
-  (let ((output (run-and-capture "let x = 10\nif (x > 5) { print(\"big\") } else { print(\"small\") }")))
+  (let ((output (run-and-capture "let x = 10;\nif (x > 5) { print(\"big\"); } else { print(\"small\"); }")))
     (assert-equal "if comparison" "big\n" output)))
 
 (define (test-while-loop)
   "Test while loop"
-  (let ((output (run-and-capture "let i = 0\nwhile (i < 3) { print(i)\ni = i + 1 }")))
+  (let ((output (run-and-capture "let i = 0;\nwhile (i < 3) { print(i);\ni = i + 1; }")))
     (assert-equal "while loop" "0\n1\n2\n" output)))
 
 (define (test-for-loop)
   "Test for loop"
-  (let ((output (run-and-capture "for (let i = 0; i < 3; i = i + 1) { print(i) }")))
+  (let ((output (run-and-capture "for (let i = 0; i < 3; i = i + 1) { print(i); }")))
     (assert-equal "for loop" "0\n1\n2\n" output)))
 
 ; ----------------------------------------------------------------------------
@@ -204,27 +204,27 @@
 
 (define (test-simple-function)
   "Test simple function declaration and call"
-  (let ((output (run-and-capture "fun greet() { print(\"hello\") }\ngreet()")))
+  (let ((output (run-and-capture "fun greet() { print(\"hello\"); }\ngreet();")))
     (assert-equal "simple function call" "hello\n" output)))
 
 (define (test-function-with-args)
   "Test function with arguments"
-  (let ((output (run-and-capture "fun add(a: int, b: int) { print(a + b) }\nadd(3, 4)")))
+  (let ((output (run-and-capture "fun add(a: int, b: int) { print(a + b); }\nadd(3, 4);")))
     (assert-equal "function with args" "7\n" output)))
 
 (define (test-function-return)
   "Test function with return"
-  (let ((output (run-and-capture "int fun square(x: int) { return x * x }\nprint(square(5))")))
+  (let ((output (run-and-capture "int fun square(x: int) { return x * x; }\nprint(square(5));")))
     (assert-equal "function return" "25\n" output)))
 
 (define (test-recursive-function)
   "Test recursive function (factorial)"
-  (let ((output (run-and-capture "int fun factorial(n: int) {\nif (n <= 1) { return 1 }\nreturn n * factorial(n - 1)\n}\nprint(factorial(5))")))
+  (let ((output (run-and-capture "int fun factorial(n: int) {\nif (n <= 1) { return 1; }\nreturn n * factorial(n - 1);\n}\nprint(factorial(5));")))
     (assert-equal "recursive factorial" "120\n" output)))
 
 (define (test-fibonacci)
   "Test fibonacci function"
-  (let ((output (run-and-capture "int fun fib(n: int) {\nif (n <= 1) { return n }\nreturn fib(n - 1) + fib(n - 2)\n}\nprint(fib(10))")))
+  (let ((output (run-and-capture "int fun fib(n: int) {\nif (n <= 1) { return n; }\nreturn fib(n - 1) + fib(n - 2);\n}\nprint(fib(10));")))
     (assert-equal "fibonacci(10)" "55\n" output)))
 
 ; ----------------------------------------------------------------------------
