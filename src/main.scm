@@ -15,16 +15,19 @@
 (load "semantic/symbol-table.scm")
 (load "semantic/analyzer.scm")
 
+; Load Interpreter Modules
+(load "interpreter/environment.scm")
+(load "interpreter/interpreter.scm")
+
 ; Import Libraries
 (import (semantic types))
 (import (semantic symbol-table))
-; (import (semantic analyzer)) ; Loaded as script
 
 ; ----------------------------------------------------------------------------
 ; Version Information
 ; ----------------------------------------------------------------------------
 
-(define *krypto-version* "0.3.0")
+(define *krypto-version* "0.4.0")
 (define *krypto-name* "Krypto")
 
 ; ----------------------------------------------------------------------------
@@ -50,7 +53,9 @@
     (let ((ast (parse input)))
       (display "Running Semantic Analysis...")(newline)
       (if (analyze ast)
-          (display "Semantic Analysis Passed.")
+          (begin
+            (display "Running Interpreter...")(newline)
+            (interpret ast))
           (display "Semantic Analysis Failed."))
       (newline))))
 
@@ -70,9 +75,11 @@
                    (begin
                        (display "Running Semantic Analysis...")(newline)
                        (if (analyze ast)
-                           (display "Success!")
-                           (display "Failed."))
-                       (newline))
+                           (begin
+                             (display "Running Interpreter...")(newline)
+                             (interpret ast)
+                             (display "Execution complete.")(newline))
+                           (display "Semantic Analysis Failed.")))
                    (display "Parsing failed.")))))
         (begin
           (display "Error: Could not read file ") (display filename) (newline)))))
