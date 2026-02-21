@@ -25,7 +25,12 @@
   ; Error Handling
   ; ----------------------------------------------------------------------------
 
+  ; ----------------------------------------------------------------------------
+  ; Error Handling & Globals
+  ; ----------------------------------------------------------------------------
+
   (define *semantic-errors* '())
+  (define *class-scopes* (make-hashtable string-hash string=?))
 
   (define (semantic-error message location)
     "Record a semantic error"
@@ -104,6 +109,7 @@
   (define (analyze ast)
     "Main entry point for semantic analysis"
     (set! *semantic-errors* '())
+    (set! *class-scopes* (make-hashtable string-hash string=?))
     (let ((env (make-symbol-environment)))
       ; Define built-ins types (as symbols in symbol table to be found?)
       ; Actually built-in types like 'int' are keywords often, but if they are treated as identifiers:
@@ -143,6 +149,7 @@
       ((binary-expr? node) (analyze-binary node env))
       ((unary-expr? node) (analyze-unary node env))
       ((call-expr? node) (analyze-call node env))
+      ((member-expr? node) (analyze-member node env))
       ((and (literal? node) (not (null-literal? node))) (analyze-literal node env))
       ((null-literal? node) (make-type-any))
       ((identifier? node) (analyze-identifier node env))
@@ -172,6 +179,8 @@
       ; Methods
       (for-each (lambda (method) (analyze-node method env))
                 (ast-get node 'methods))
+      
+      (hashtable-set! *class-scopes* name (env-current-scope env))
       (env-exit-scope env)
       (make-type-void)))
 
@@ -350,25 +359,56 @@
           (op (ast-get node 'operator)))
       operand-type))
 
+  (define (analyze-member node env)
+    (let* ((object-node (ast-get node 'object))
+           (member-name (ast-get node 'member))
+           (object-type (analyze-node object-node env))
+           (loc (ast-get node 'location)))
+      (if (type-class? object-type)
+          (let* ((class-name (type-class-name object-type))
+                 (class-scope (hashtable-ref *class-scopes* class-name #f)))
+            (if class-scope
+                (let ((sym (scope-lookup class-scope member-name)))
+                  (if sym
+                      (semantic-symbol-type sym)
+                      (begin
+                        (semantic-error (string-append "Undefined member '" member-name "' in class " class-name) loc)
+                        (make-type-any))))
+                (begin
+                  (semantic-error (string-append "Unknown class: " class-name) loc)
+                  (make-type-any))))
+          (begin
+            (if (not (type-any? object-type))
+                (semantic-error "Member access requires an object" loc))
+            (make-type-any)))))
+
   (define (analyze-call node env)
     (let ((callee-type (analyze-node (ast-get node 'callee) env))
           (args (ast-get node 'arguments))
           (loc (ast-get node 'location)))
       
-      (if (type-function? callee-type)
-          (let ((param-types (type-function-params callee-type))
-                (arg-types (map (lambda (a) (analyze-node a env)) args)))
-            ; Check arg count
-            (if (= (length param-types) (length arg-types))
-                (begin
-                  (for-each (lambda (pt at arg-node)
-                              (expect-type at pt (ast-get arg-node 'location)))
-                            param-types arg-types args)
-                  (type-function-return callee-type))
-                (begin
-                  (semantic-error "Incorrect number of arguments" loc)
-                  (type-function-return callee-type)))) 
-          (begin
-            (if (not (type-any? callee-type))
-                (semantic-error "Calling a non-function" loc))
-            (make-type-any)))))
+      (cond
+        ((type-function? callee-type)
+         (let ((param-types (type-function-params callee-type))
+               (arg-types (map (lambda (a) (analyze-node a env)) args)))
+           ; Check arg count
+           (if (= (length param-types) (length arg-types))
+               (begin
+                 (for-each (lambda (pt at arg-node)
+                             (expect-type at pt (ast-get arg-node 'location)))
+                           param-types arg-types args)
+                 (type-function-return callee-type))
+               (begin
+                 (semantic-error "Incorrect number of arguments" loc)
+                 (type-function-return callee-type)))))
+                 
+        ((type-class? callee-type)
+         ; Class instantiation act as a call
+         ; For Phase 5, we loosely check args and return the class instance
+         (for-each (lambda (a) (analyze-node a env)) args)
+         callee-type)
+         
+        (else
+         (if (not (type-any? callee-type))
+             (semantic-error "Calling a non-function or non-class" loc))
+         (make-type-any)))))

@@ -68,7 +68,7 @@
 
 (define (test-integer-literal)
   "Test parsing integer literals"
-  (let* ((ast (parse "42"))
+  (let* ((ast (parse "42;"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls))
          (expr (ast-get stmt 'expression)))
@@ -80,7 +80,7 @@
 
 (define (test-float-literal)
   "Test parsing float literals"
-  (let* ((ast (parse "3.14"))
+  (let* ((ast (parse "3.14;"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls))
          (expr (ast-get stmt 'expression)))
@@ -92,7 +92,7 @@
 
 (define (test-string-literal)
   "Test parsing string literals"
-  (let* ((ast (parse "\"hello\""))
+  (let* ((ast (parse "\"hello\";"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls))
          (expr (ast-get stmt 'expression)))
@@ -104,11 +104,11 @@
 
 (define (test-bool-literals)
   "Test parsing boolean literals"
-  (let* ((ast1 (parse "true"))
+  (let* ((ast1 (parse "true;"))
          (decls1 (ast-get ast1 'declarations))
          (stmt1 (car decls1))
          (expr1 (ast-get stmt1 'expression))
-         (ast2 (parse "false"))
+         (ast2 (parse "false;"))
          (decls2 (ast-get ast2 'declarations))
          (stmt2 (car decls2))
          (expr2 (ast-get stmt2 'expression)))
@@ -129,7 +129,7 @@
 
 (define (test-identifier)
   "Test parsing identifiers"
-  (let* ((ast (parse "foo"))
+  (let* ((ast (parse "foo;"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls))
          (expr (ast-get stmt 'expression)))
@@ -141,7 +141,7 @@
 
 (define (test-binary-addition)
   "Test parsing binary addition"
-  (let* ((ast (parse "1 + 2"))
+  (let* ((ast (parse "1 + 2;"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls))
          (expr (ast-get stmt 'expression)))
@@ -159,7 +159,7 @@
 
 (define (test-binary-precedence)
   "Test operator precedence: 1 + 2 * 3 should parse as 1 + (2 * 3)"
-  (let* ((ast (parse "1 + 2 * 3"))
+  (let* ((ast (parse "1 + 2 * 3;"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls))
          (expr (ast-get stmt 'expression)))
@@ -176,7 +176,7 @@
 
 (define (test-unary-negation)
   "Test parsing unary negation"
-  (let* ((ast (parse "-42"))
+  (let* ((ast (parse "-42;"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls))
          (expr (ast-get stmt 'expression)))
@@ -188,7 +188,7 @@
 
 (define (test-grouped-expression)
   "Test parsing grouped expressions: (1 + 2) * 3"
-  (let* ((ast (parse "(1 + 2) * 3"))
+  (let* ((ast (parse "(1 + 2) * 3;"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls))
          (expr (ast-get stmt 'expression)))
@@ -201,7 +201,7 @@
 
 (define (test-comparison)
   "Test parsing comparison expressions"
-  (let* ((ast (parse "x < 10"))
+  (let* ((ast (parse "x < 10;"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls))
          (expr (ast-get stmt 'expression)))
@@ -213,7 +213,7 @@
 
 (define (test-function-call)
   "Test parsing function calls"
-  (let* ((ast (parse "foo(1, 2, 3)"))
+  (let* ((ast (parse "foo(1, 2, 3);"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls))
          (expr (ast-get stmt 'expression)))
@@ -232,7 +232,7 @@
 
 (define (test-let-statement)
   "Test parsing let statements"
-  (let* ((ast (parse "let x = 42"))
+  (let* ((ast (parse "let x = 42;"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls)))
     (assert-true "let stmt parsed"
@@ -246,7 +246,7 @@
 
 (define (test-let-mut-statement)
   "Test parsing mutable let statements"
-  (let* ((ast (parse "let mut x = 42"))
+  (let* ((ast (parse "let mut x = 42;"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls)))
     (assert-true "let stmt parsed"
@@ -257,7 +257,7 @@
 
 (define (test-let-with-type)
   "Test parsing let with type annotation"
-  (let* ((ast (parse "let x: int = 42"))
+  (let* ((ast (parse "let x: int = 42;"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls))
          (type-ann (ast-get stmt 'type-annotation)))
@@ -269,7 +269,7 @@
 
 (define (test-if-statement)
   "Test parsing if statements"
-  (let* ((ast (parse "if (x > 0) { y }"))
+  (let* ((ast (parse "if (x > 0) { y; }"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls)))
     (assert-true "if stmt parsed"
@@ -284,7 +284,7 @@
 
 (define (test-if-else-statement)
   "Test parsing if-else statements"
-  (let* ((ast (parse "if (x > 0) { y } else { z }"))
+  (let* ((ast (parse "if (x > 0) { y; } else { z; }"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls)))
     (assert-true "if stmt parsed"
@@ -294,7 +294,7 @@
 
 (define (test-while-statement)
   "Test parsing while statements"
-  (let* ((ast (parse "while (x > 0) { x }"))
+  (let* ((ast (parse "while (x > 0) { x; }"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls)))
     (assert-true "while stmt parsed"
@@ -343,7 +343,7 @@
 
 (define (test-function-with-return-type)
   "Test parsing function with return type"
-  (let* ((ast (parse "int fun answer() { return 42 }"))
+  (let* ((ast (parse "int fun answer() { return 42; }"))
          (decls (ast-get ast 'declarations))
          (func (car decls))
          (ret-type (ast-get func 'return-type)))
@@ -357,9 +357,9 @@
   "Test parsing fibonacci function"
   (let* ((source "int fun fib(n: int) {
                     if (n <= 1) {
-                      return n
+                      return n;
                     }
-                    return fib(n - 1) + fib(n - 2)
+                    return fib(n - 1) + fib(n - 2);
                   }")
          (ast (parse source))
          (decls (ast-get ast 'declarations))
@@ -372,7 +372,7 @@
 
 (define (test-for-statement)
   "Test parsing for statements"
-  (let* ((ast (parse "for (let i = 0; i < 10; i = i + 1) { print(i) }"))
+  (let* ((ast (parse "for (let i = 0; i < 10; i = i + 1) { print(i); }"))
          (decls (ast-get ast 'declarations))
          (stmt (car decls)))
     (assert-true "for stmt parsed"

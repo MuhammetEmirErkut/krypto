@@ -13,13 +13,17 @@ class Dog implements Animal {
         print("Woof!");
     }
 
+    int fun getAge() {
+        return age;
+    }
+
     void fun move() {
         print("Running...");
     }
 
     void fun bark() {
         print(name);
-        print(" says: Woof!");
+        print("says: Woof!");
     }
 }
 
@@ -45,7 +49,8 @@ fun main() {
     // Wait, I didn't update expression parser to handle 'new'.
     
     // Phase 5 Todo: Class Instantiation
-    // let dog = Dog("Buddy", 3);
-    // dog.makeSound();
-    // dog.bark();
+    let dog = Dog("Buddy", 3);
+    dog.makeSound();
+    print(dog.getAge());
+    dog.bark();
 }

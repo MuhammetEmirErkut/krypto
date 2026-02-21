@@ -150,6 +150,8 @@
        ((builtin-proc callee) args))
       ((krypto-function? callee)
        (call-function callee args env))
+      ((and (list? callee) (eq? (car callee) 'krypto-class))
+       (instantiate-class callee args env))
       (else
        (error 'eval-call "Attempting to call a non-function")))))
 
@@ -165,8 +167,14 @@
        (error 'eval-assign "Invalid assignment target")))))
 
 (define (eval-member node env)
-  "Evaluate member access (placeholder for future OOP)"
-  *krypto-null*)
+  "Evaluate member access"
+  (let* ((object (eval-node (ast-get node 'object) env))
+         (member-name (ast-get node 'member)))
+    (if (and (list? object) (eq? (car object) 'krypto-instance))
+        (let* ((instance-env (caddr object))
+               (val (env-get instance-env member-name))) ; Look up field or method
+          val)
+        (error 'eval-member "Member access on non-object"))))
 
 (define (eval-index node env)
   "Evaluate index access (placeholder for future arrays)"
@@ -261,10 +269,9 @@
     *krypto-null*))
 
 (define (eval-class-decl node env)
-  "Evaluate a class declaration (basic placeholder)"
-  ;; For now, just register the class name
+  "Evaluate a class declaration: capture AST node and closure environment"
   (let ((name (ast-get node 'name)))
-    (env-define! env name (list 'krypto-class name))
+    (env-define! env name (list 'krypto-class name node env))
     *krypto-null*))
 
 (define (eval-program node env)
@@ -274,8 +281,39 @@
   *krypto-null*)
 
 ; ----------------------------------------------------------------------------
-; Function Calling
+; Function Calling and Instantiation
 ; ----------------------------------------------------------------------------
+
+(define (instantiate-class class-def args caller-env)
+  "Create a new instance of a class"
+  (let* ((name (cadr class-def))
+         (node (caddr class-def))
+         (closure-env (cadddr class-def))
+         (instance-env (make-env closure-env)) ; Instance scope
+         (fields (ast-get node 'fields))
+         (methods (ast-get node 'methods)))
+    ;; Bind fields strictly by position (like a struct or tuple constructor)
+    (let loop ((fs fields) (as args))
+      (cond
+        ((and (null? fs) (null? as)) #t)
+        ((null? fs) (error 'instantiate-class "Too many arguments for constructor"))
+        ((null? as) (error 'instantiate-class "Too few arguments for constructor"))
+        (else
+         (env-define! instance-env (ast-get (car fs) 'name) (car as))
+         (loop (cdr fs) (cdr as)))))
+         
+    ;; Bind methods into instance scope so they capture fields
+    (for-each (lambda (m)
+                (let* ((m-name (ast-get m 'name))
+                       (m-params (map (lambda (p) (ast-get p 'name)) (ast-get m 'params)))
+                       (m-body (ast-get m 'body))
+                       ;; Methods capture the instance-env!
+                       (m-func (make-krypto-function m-name m-params m-body instance-env)))
+                  (env-define! instance-env m-name m-func)))
+              methods)
+              
+    ;; Return instance tuple
+    (list 'krypto-instance name instance-env)))
 
 (define (call-function func args caller-env)
   "Call a user-defined Krypto function"

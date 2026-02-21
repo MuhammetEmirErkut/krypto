@@ -36,7 +36,7 @@
 
 (define (krypto-repl)
   (display "Welcome to ") (display *krypto-name*) (display " v") (display *krypto-version*) (newline)
-  (display "Type :quit to exit") (newline) (newline)
+  (display "Commands: :quit to exit, :load <filename> to run a file") (newline) (newline)
   (repl-loop))
 
 (define (repl-loop)
@@ -46,6 +46,11 @@
       ((eof-object? input) (newline) (display "Goodbye!") (newline))
       ((string=? input ":quit") (display "Goodbye!") (newline))
       ((string=? input "") (repl-loop))
+      ((and (> (string-length input) 6) 
+            (string=? (substring input 0 6) ":load "))
+       (let ((file-name (substring input 6 (string-length input))))
+         (run-file file-name)
+         (repl-loop)))
       (else (process-input input) (repl-loop)))))
 
 (define (process-input input)
@@ -104,11 +109,25 @@
     (let ((char (read-char)))
       (cond
         ((eof-object? char)
-         (if (null? chars) char (list->string (reverse chars))))
+         (if (null? chars) char (trim-whitespace (list->string (reverse chars)))))
         ((char=? char #\newline)
-         (list->string (reverse chars)))
+         (trim-whitespace (list->string (reverse chars))))
         (else
          (loop (cons char chars)))))))
+
+(define (trim-whitespace str)
+  (let* ((len (string-length str))
+         (start (let loop ((i 0))
+                  (if (and (< i len) (char-whitespace? (string-ref str i)))
+                      (loop (+ i 1))
+                      i)))
+         (end (let loop ((i (- len 1)))
+                (if (and (>= i start) (char-whitespace? (string-ref str i)))
+                    (loop (- i 1))
+                    (+ i 1)))))
+    (if (>= start end)
+        ""
+        (substring str start end))))
 
 ; ----------------------------------------------------------------------------
 ; CLI

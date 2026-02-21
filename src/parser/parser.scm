@@ -878,6 +878,25 @@
                                state4)))
               (loop new-fields state5)))))))
 
+(define (parse-struct-declaration state)
+  "Parse struct declaration: 'struct' IDENTIFIER '{' fields '}'"
+  (let ((struct-tok (parser-current state)))
+    (let* ((result1 (expect-keyword state "struct" "Expected 'struct'"))
+           (state1 (cdr result1))
+           ; Get struct name
+           (result2 (expect state1 'TOKEN-IDENTIFIER "Expected struct name"))
+           (name-tok (car result2))
+           (state2 (cdr result2))
+           ; Parse fields
+           (fields-result (parse-struct-fields state2))
+           (fields (car fields-result))
+           (state3 (cdr fields-result)))
+      (cons (make-struct-decl (token-value name-tok)
+                              fields
+                              (token-line struct-tok)
+                              (token-column struct-tok))
+            state3))))
+
 (define (parse-class-members state)
   "Parse class members: fields and methods"
   (let ((brace-tok (parser-current state)))
@@ -1148,6 +1167,10 @@
       ; Class declaration
       ((parser-check-keyword state "class")
        (parse-class-declaration state))
+
+      ; Struct declaration
+      ((parser-check-keyword state "struct")
+       (parse-struct-declaration state))
 
       ; Interface declaration
       ((parser-check-keyword state "interface")

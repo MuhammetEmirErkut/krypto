@@ -272,6 +272,16 @@
                  'type type
                  'location (make-location line col)))
 
+;; Struct declaration
+;; (struct-decl name fields location)
+
+(define (make-struct-decl name fields line col)
+  "Create a struct declaration node"
+  (make-ast-node 'struct-decl
+                 'name name
+                 'fields fields          ; list of field nodes
+                 'location (make-location line col)))
+
 ;; Class declaration
 ;; (class-decl name parent interfaces fields methods location)
 
@@ -369,6 +379,7 @@
 (define (block-stmt? node) (eq? (ast-type node) 'block-stmt))
 
 (define (fun-decl? node) (eq? (ast-type node) 'fun-decl))
+(define (struct-decl? node) (eq? (ast-type node) 'struct-decl))
 (define (class-decl? node) (eq? (ast-type node) 'class-decl))
 (define (interface-decl? node) (eq? (ast-type node) 'interface-decl))
 
@@ -474,6 +485,18 @@
        (display indent-str)
        (display ")\n"))
       
+      ; Struct declaration
+      ((struct-decl? node)
+       (display "(struct-decl ")
+       (display (ast-get node 'name))
+       (display "\n")
+       (display indent-str)
+       (display "  fields:\n")
+       (for-each (lambda (f) (ast-print-helper f (+ indent 2)))
+                 (ast-get node 'fields))
+       (display indent-str)
+       (display ")\n"))
+
       ; Program
       ((program? node)
        (display "(program\n")
