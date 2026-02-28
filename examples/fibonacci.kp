@@ -10,9 +10,9 @@ int fun fibonacci(n: int) {
 
 fun main() {
     // Print first 10 Fibonacci numbers
-    let i = 0;
+    let mut i: int = 0;
     while (i < 10) {
-        let fib = fibonacci(i);
+        let fib: int = fibonacci(i);
         print(fib);
         i = i + 1;
     }

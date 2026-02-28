@@ -16,8 +16,11 @@
 (load "src/semantic/analyzer.scm")
 
 ; Load Interpreter Modules
-(load "src/interpreter/environment.scm")
-(load "src/interpreter/interpreter.scm")
+; (load "src/interpreter/environment.scm")
+; (load "src/interpreter/interpreter.scm")
+
+; Load Code Generation Modules
+(load "src/codegen/jasmin.scm")
 
 ; Import Libraries
 (import (semantic types))
@@ -27,7 +30,7 @@
 ; Version Information
 ; ----------------------------------------------------------------------------
 
-(define *krypto-version* "0.4.0")
+(define *krypto-version* "0.5.0")
 (define *krypto-name* "Krypto")
 
 ; ----------------------------------------------------------------------------
@@ -36,7 +39,7 @@
 
 (define (krypto-repl)
   (display "Welcome to ") (display *krypto-name*) (display " v") (display *krypto-version*) (newline)
-  (display "Commands: :quit to exit, :load <filename> to run a file") (newline) (newline)
+  (display "Commands: :quit to exit, :load <filename> to run a file, :build <filename> to compile to JVM") (newline) (newline)
   (repl-loop))
 
 (define (repl-loop)
@@ -50,6 +53,11 @@
             (string=? (substring input 0 6) ":load "))
        (let ((file-name (substring input 6 (string-length input))))
          (run-file file-name)
+         (repl-loop)))
+      ((and (> (string-length input) 7)
+            (string=? (substring input 0 7) ":build "))
+       (let ((file-name (substring input 7 (string-length input))))
+         (build-file file-name)
          (repl-loop)))
       (else (process-input input) (repl-loop)))))
 
@@ -67,6 +75,27 @@
 ; ----------------------------------------------------------------------------
 ; File Processing
 ; ----------------------------------------------------------------------------
+
+(define (build-file filename)
+  (display "Building (JVM Target): ") (display filename) (newline)
+  (let ((source (read-source-file filename)))
+    (if source
+        (begin
+           (let ((tokens (tokenize source)))
+             (let ((ast (parse source)))
+               (display "Parsing...")(newline)
+               (if ast
+                   (begin
+                       (display "Running Semantic Analysis...")(newline)
+                       (if (analyze ast)
+                           (begin
+                             (display "Generating Jasmin Code...")(newline)
+                             (generate-program ast "Main.j")
+                             (display "Generated Main.j ! Use 'java -jar toolchain/jasmin.jar Main.j' to assemble.")(newline))
+                           (display "Semantic Analysis Failed.")))
+                   (display "Parsing failed.")))))
+        (begin
+          (display "Error: Could not read file ") (display filename) (newline)))))
 
 (define (run-file filename)
   (display "Running: ") (display filename) (newline)
@@ -137,8 +166,12 @@
   (if (null? (cdr args))
       (krypto-repl)
       (let ((arg (cadr args)))
-        (if (equal? arg "repl")
-            (krypto-repl)
-            (run-file arg)))))
+        (cond
+          ((equal? arg "repl") (krypto-repl))
+          ((equal? arg "build")
+           (if (> (length args) 2)
+               (build-file (caddr args))
+               (display "Usage: chez --script src/main.scm build <filename>\n")))
+          (else (run-file arg))))))
 
 (main (command-line))

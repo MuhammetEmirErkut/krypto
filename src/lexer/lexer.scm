@@ -70,7 +70,6 @@
 (define *keywords*
   '("fun" "let" "mut" "if" "else" "while" "for" "in"
     "return" "true" "false" "null" "and" "or" "not"
-    "struct" "class" "interface" "implements" "extends" "new" "this"
     "import" "export" "from" "as" "pub"
     "int" "float" "string" "bool" "void"))
 

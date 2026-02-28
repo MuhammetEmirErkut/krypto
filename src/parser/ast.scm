@@ -282,28 +282,7 @@
                  'fields fields          ; list of field nodes
                  'location (make-location line col)))
 
-;; Class declaration
-;; (class-decl name parent interfaces fields methods location)
 
-(define (make-class-decl name parent interfaces fields methods line col)
-  "Create a class declaration node"
-  (make-ast-node 'class-decl
-                 'name name
-                 'parent parent          ; parent class name or #f
-                 'interfaces interfaces  ; list of interface names
-                 'fields fields          ; list of field nodes
-                 'methods methods        ; list of fun-decl nodes
-                 'location (make-location line col)))
-
-;; Interface declaration
-;; (interface-decl name methods location)
-
-(define (make-interface-decl name methods line col)
-  "Create an interface declaration node"
-  (make-ast-node 'interface-decl
-                 'name name
-                 'methods methods  ; list of method signatures (fun-decl without body or stripped)
-                 'location (make-location line col)))
 
 ; ----------------------------------------------------------------------------
 ; TYPE ANNOTATIONS
@@ -380,8 +359,7 @@
 
 (define (fun-decl? node) (eq? (ast-type node) 'fun-decl))
 (define (struct-decl? node) (eq? (ast-type node) 'struct-decl))
-(define (class-decl? node) (eq? (ast-type node) 'class-decl))
-(define (interface-decl? node) (eq? (ast-type node) 'interface-decl))
+
 
 (define (program? node) (eq? (ast-type node) 'program))
 

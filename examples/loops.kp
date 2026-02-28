@@ -4,21 +4,21 @@
 fun main() {
     print("--- For Loop Example ---");
     // C-style for loop: for (init; condition; update)
-    for (let i = 0; i < 5; i = i + 1) {
+    for (let i: int = 0; i < 5; i = i + 1) {
         print(i);
     }
 
     print("--- While Loop Example ---");
-    let count = 5;
+    let count: int = 5;
     while (count > 0) {
         print(count);
         count = count - 1;
     }
 
     print("--- Nested Loops and Logic ---");
-    for (let x = 1; x <= 3; x = x + 1) {
-        let row = "";
-        for (let y = 1; y <= 3; y = y + 1) {
+    for (let x: int = 1; x <= 3; x = x + 1) {
+        let row: string = "";
+        for (let y: int = 1; y <= 3; y = y + 1) {
             if (x == y) {
                 print("Diagonal element found at:");
                 print(x);

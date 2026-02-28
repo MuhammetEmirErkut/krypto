@@ -30,7 +30,6 @@
   ; ----------------------------------------------------------------------------
 
   (define *semantic-errors* '())
-  (define *class-scopes* (make-hashtable string-hash string=?))
 
   (define (semantic-error message location)
     "Record a semantic error"
@@ -71,11 +70,11 @@
                      ((bool) (make-type-base 'bool))
                      ((string) (make-type-base 'string))
                      ((void) (make-type-void))
-                     (else (make-type-class name)))
-                   (make-type-class name)))) ; Should not happen if parser validates keywords
+                     (else (make-type-any)))
+                   (make-type-any)))) ; Should not happen if parser validates keywords
             
             ((eq? node-type 'named-type)
-             (make-type-class (ast-get node 'name)))
+             (make-type-any))
             
             ((eq? node-type 'array-type)
              ; For now treat array as class "Array" or similar, or add ArrayType
@@ -108,8 +107,6 @@
 
   (define (analyze ast)
     "Main entry point for semantic analysis"
-    (set! *semantic-errors* '())
-    (set! *class-scopes* (make-hashtable string-hash string=?))
     (let ((env (make-symbol-environment)))
       ; Define built-ins types (as symbols in symbol table to be found?)
       ; Actually built-in types like 'int' are keywords often, but if they are treated as identifiers:
@@ -134,8 +131,6 @@
     (if (not node) (make-type-void)
     (cond
       ((program? node) (analyze-program node env))
-      ((class-decl? node) (analyze-class node env))
-      ((interface-decl? node) (analyze-interface node env))
       ((fun-decl? node) (analyze-function node env))
       ((let-stmt? node) (analyze-let node env))
       ((block-stmt? node) (analyze-block node env))
@@ -149,7 +144,6 @@
       ((binary-expr? node) (analyze-binary node env))
       ((unary-expr? node) (analyze-unary node env))
       ((call-expr? node) (analyze-call node env))
-      ((member-expr? node) (analyze-member node env))
       ((and (literal? node) (not (null-literal? node))) (analyze-literal node env))
       ((null-literal? node) (make-type-any))
       ((identifier? node) (analyze-identifier node env))
@@ -164,28 +158,7 @@
               (ast-get node 'declarations))
     (make-type-void))
 
-  (define (analyze-class node env)
-    (let ((name (ast-get node 'name))
-          (loc (ast-get node 'location)))
-      (define-symbol-safe env name (make-type-class name) 'class loc)
-      (env-enter-scope env)
-      ; Fields
-      (for-each (lambda (field)
-                  (let ((fname (ast-get field 'name))
-                        (floc (ast-get field 'location))
-                        (ftype (resolve-type-annotation (ast-get field 'type) env)))
-                    (define-symbol-safe env fname ftype 'field floc)))
-                (ast-get node 'fields))
-      ; Methods
-      (for-each (lambda (method) (analyze-node method env))
-                (ast-get node 'methods))
-      
-      (hashtable-set! *class-scopes* name (env-current-scope env))
-      (env-exit-scope env)
-      (make-type-void)))
 
-  (define (analyze-interface node env)
-    (make-type-void)) ; TODO: Implement interfaces
 
   (define (analyze-function node env)
     (let* ((name (ast-get node 'name))
@@ -359,28 +332,6 @@
           (op (ast-get node 'operator)))
       operand-type))
 
-  (define (analyze-member node env)
-    (let* ((object-node (ast-get node 'object))
-           (member-name (ast-get node 'member))
-           (object-type (analyze-node object-node env))
-           (loc (ast-get node 'location)))
-      (if (type-class? object-type)
-          (let* ((class-name (type-class-name object-type))
-                 (class-scope (hashtable-ref *class-scopes* class-name #f)))
-            (if class-scope
-                (let ((sym (scope-lookup class-scope member-name)))
-                  (if sym
-                      (semantic-symbol-type sym)
-                      (begin
-                        (semantic-error (string-append "Undefined member '" member-name "' in class " class-name) loc)
-                        (make-type-any))))
-                (begin
-                  (semantic-error (string-append "Unknown class: " class-name) loc)
-                  (make-type-any))))
-          (begin
-            (if (not (type-any? object-type))
-                (semantic-error "Member access requires an object" loc))
-            (make-type-any)))))
 
   (define (analyze-call node env)
     (let ((callee-type (analyze-node (ast-get node 'callee) env))

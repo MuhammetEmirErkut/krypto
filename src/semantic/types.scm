@@ -4,17 +4,14 @@
 
 (library (semantic types)
   (export make-type-base
-          make-type-class
           make-type-function
           make-type-void
           make-type-any
           type-base?
-          type-class?
           type-function?
           type-void?
           type-any?
           type-base-name
-          type-class-name
           type-function-params
           type-function-return
           type-equal?
@@ -28,8 +25,7 @@
   (define-record-type type-base
     (fields name)) ; 'int, 'float, 'string, 'bool
 
-  (define-record-type type-class
-    (fields name)) ; String name of the class
+
 
   (define-record-type type-function
     (fields params ; List of types
@@ -49,8 +45,7 @@
     (cond
       ((and (type-base? t1) (type-base? t2))
        (eq? (type-base-name t1) (type-base-name t2)))
-      ((and (type-class? t1) (type-class? t2))
-       (string=? (type-class-name t1) (type-class-name t2)))
+
       ((and (type-function? t1) (type-function? t2))
        (and (type-equal? (type-function-return t1) (type-function-return t2))
             (= (length (type-function-params t1)) (length (type-function-params t2)))
@@ -62,7 +57,7 @@
   (define (type-to-string t)
     (cond
       ((type-base? t) (symbol->string (type-base-name t)))
-      ((type-class? t) (string-append "class " (type-class-name t)))
+
       ((type-function? t) 
        (string-append "(" 
                       (apply string-append (map (lambda (x) (string-append (type-to-string x) " ")) 

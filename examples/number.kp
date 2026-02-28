@@ -1,0 +1,7 @@
+fun main(){
+
+ let x: int = 10;
+ let y: int = 20;
+ 
+ print(x+y);
+}
