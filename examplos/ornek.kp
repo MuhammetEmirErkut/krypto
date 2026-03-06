@@ -1,0 +1,11 @@
+// Krypto Programming Language
+// Basit bir ornek proje
+int fun topla_ve_kare_al(a: int, b: int) {
+    let toplam: int = a + b;
+    return toplam * toplam;
+}
+
+fun main() {
+    let sonuc: int = topla_ve_kare_al(3, 4);
+    print(sonuc);
+}

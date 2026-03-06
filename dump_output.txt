@@ -1,0 +1,117 @@
+==================================================
+--- 1. LEXER OUTPUT ---
+TOKEN-NEWLINE : \n
+TOKEN-NEWLINE : \n
+TOKEN-KEYWORD : int
+TOKEN-KEYWORD : fun
+TOKEN-IDENTIFIER : topla_ve_kare_al
+TOKEN-LPAREN : (
+TOKEN-IDENTIFIER : a
+TOKEN-COLON : :
+TOKEN-KEYWORD : int
+TOKEN-COMMA : ,
+TOKEN-IDENTIFIER : b
+TOKEN-COLON : :
+TOKEN-KEYWORD : int
+TOKEN-RPAREN : )
+TOKEN-LBRACE : {
+TOKEN-NEWLINE : \n
+TOKEN-KEYWORD : let
+TOKEN-IDENTIFIER : toplam
+TOKEN-COLON : :
+TOKEN-KEYWORD : int
+TOKEN-EQUALS : =
+TOKEN-IDENTIFIER : a
+TOKEN-PLUS : +
+TOKEN-IDENTIFIER : b
+TOKEN-SEMICOLON : ;
+TOKEN-NEWLINE : \n
+TOKEN-KEYWORD : return
+TOKEN-IDENTIFIER : toplam
+TOKEN-STAR : *
+TOKEN-IDENTIFIER : toplam
+TOKEN-SEMICOLON : ;
+TOKEN-NEWLINE : \n
+TOKEN-RBRACE : }
+TOKEN-NEWLINE : \n
+TOKEN-NEWLINE : \n
+TOKEN-KEYWORD : fun
+TOKEN-IDENTIFIER : main
+TOKEN-LPAREN : (
+TOKEN-RPAREN : )
+TOKEN-LBRACE : {
+TOKEN-NEWLINE : \n
+TOKEN-KEYWORD : let
+TOKEN-IDENTIFIER : sonuc
+TOKEN-COLON : :
+TOKEN-KEYWORD : int
+TOKEN-EQUALS : =
+TOKEN-IDENTIFIER : topla_ve_kare_al
+TOKEN-LPAREN : (
+TOKEN-INTEGER : 3
+TOKEN-COMMA : ,
+TOKEN-INTEGER : 4
+TOKEN-RPAREN : )
+TOKEN-SEMICOLON : ;
+TOKEN-NEWLINE : \n
+TOKEN-IDENTIFIER : print
+TOKEN-LPAREN : (
+TOKEN-IDENTIFIER : sonuc
+TOKEN-RPAREN : )
+TOKEN-SEMICOLON : ;
+TOKEN-NEWLINE : \n
+TOKEN-RBRACE : }
+TOKEN-NEWLINE : \n
+TOKEN-EOF : 
+==================================================
+--- 2. PARSER AST ---
+(program declarations ((fun-decl name topla_ve_kare_al params ((param name a type (primitive-type name int location (location 3 29)) location (location 3 26)) (param name b type (primitive-type name int location (location 3 37)) location (location 3 34))) return-type (primitive-type name int location (location 3 1)) body (block-stmt statements ((let-stmt name toplam type-annotation (primitive-type name int location (location 4 17)) initializer (binary-expr operator add left (identifier name a location (location 4 23)) right (identifier name b location (location 4 27)) location (location 4 25)) is-mutable #f location (location 4 5)) (return-stmt value (binary-expr operator multiply left (identifier name toplam location (location 5 12)) right (identifier name toplam location (location 5 21)) location (location 5 19)) location (location 5 5))) location (location 3 42)) location (location 3 5)) (fun-decl name main params () return-type #f body (block-stmt statements ((let-stmt name sonuc type-annotation (primitive-type name int location (location 9 16)) initializer (call-expr callee (identifier name topla_ve_kare_al location (location 9 22)) arguments ((integer-literal value 3 location (location 9 39)) (integer-literal value 4 location (location 9 42))) location (location 9 38)) is-mutable #f location (location 9 5)) (expr-stmt expression (call-expr callee (identifier name print location (location 10 5)) arguments ((identifier name sonuc location (location 10 11))) location (location 10 10)) location (location 10 5))) location (location 8 12)) location (location 8 1))))
+==================================================
+--- 3. SEMANTIC ANALYSIS ---
+Semantic analysis successful.
+Semantic Analysis: SUCCESS
+==================================================
+--- 4. JASMIN CODE GENERATION ---
+.class public Main
+.super java/lang/Object
+
+
+.method public <init>()V
+    aload_0
+    invokenonvirtual java/lang/Object/<init>()V
+    return
+.end method
+
+.method public static topla_ve_kare_al(II)I
+    .limit stack 100
+    .limit locals 100
+    iload 0
+    iload 1
+    iadd
+    istore 2
+    iload 2
+    iload 2
+    imul
+    ireturn
+.end method
+
+.method public static main()V
+    .limit stack 100
+    .limit locals 100
+    ldc 3
+    ldc 4
+    invokestatic Main/topla_ve_kare_al(II)I
+    istore 0
+    getstatic java/lang/System/out Ljava/io/PrintStream;
+    iload 0
+    invokevirtual java/io/PrintStream/println(I)V
+    return
+.end method
+
+.method public static main([Ljava/lang/String;)V
+    .limit stack 100
+    .limit locals 100
+    invokestatic Main/main()V
+    return
+.end method
+Jasmin file generated as Main_ornek.j
