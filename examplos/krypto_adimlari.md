@@ -1,6 +1,58 @@
 # Krypto: `ornek.kp` Derleme Sürecinin Detaylı Çalışma İzi (Execution Trace)
 
-Bu rapor, `ornek.kp` programının derlenme aşamasında **kesin olarak çalışan kod bloklarını**, fonksiyon çağrılarını ve derleyici mimarisindeki ardışık akışı adım adım listeler. Tüm dosyaları yığmak yerine, sadece ilgili S-Expression (Scheme) kodları ve onların bu örnekteki rolleri açıklanmıştır.
+Bu rapor, `ornek.kp` programının derlenme aşamasında **kesin olarak çalışan kod bloklarını**, IDE entegrasyonundan başlayarak derleyici mimarisindeki ardışık akışı adım adım listeler.
+
+## 0. IDE Üzerinden Başlatma (Entry Point: "Run" Butonu)
+Krypto Studio IDE'sinde (Python) sağ üstteki `▶ Run` butonuna basıldığında `ide.py` içindeki çalışma hattı (*pipeline*) eşzamanlı bir thread olarak tetiklenir.
+
+**İlgili Açık Kaynak Kodu: (`ide.py`)**
+IDE, mevcut açık belgeyi diske kaydeder ve sırasıyla Chez Scheme derleyicisini, Java assembler'ı ve JVM Runtime'ı çağırır: 
+
+```python
+    def pipeline_worker(self):
+        target_file = self.extract_file_for_compilation() # 1. Dosya kaydedilir
+        self.log_console("Starting Application Pipeline...", clear=True)
+
+        build_dir = os.path.join(self.project_dir, "build")
+        os.makedirs(build_dir, exist_ok=True)
+
+        # 2. Scheme Derleyicisini Çağır:
+        cmd_compile = f"chez --script src/main.scm build {target_file}"
+        code = self.run_command_in_console(cmd_compile, "Step 1/3: Compiling to Jasmin Assembly (chez)")
+        
+        # Üretilen JVM kodunu taşı
+        src_j = os.path.join(self.project_dir, "Main.j")
+        dst_j = os.path.join(build_dir, "Main.j")
+        if os.path.exists(src_j):
+            shutil.move(src_j, dst_j)
+
+        # 3. Java Jasmin Assembler'ı Çağır:
+        jasmin_path = os.path.join(self.project_dir, "toolchain", "jasmin.jar")
+        cmd_assemble = f"java -jar {jasmin_path} -d {build_dir} {dst_j}"
+        code = self.run_command_in_console(cmd_assemble, "Step 2/3: Assembling to JVM Bytecode (jasmin)")
+        
+        # 4. Java Bytecode (Main.class) Dosyasını JVM'de Çalıştır:
+        cmd_run = f"java -cp {build_dir} Main"
+        code = self.run_command_in_console(cmd_run, "Step 3/3: Executing on JVM (java Main)")
+```
+Buradaki kritik komut olan `chez --script src/main.scm build ornek.kp` ile akış Python'dan çıkıp Krypto Derleyicisine, yani Lisp dünyasına devredilir.
+
+`src/main.scm` kodunda `build-file` fonksiyonu tetiklenir ve kaynak kod sırasıyla lexer, parser ve semantic analize sokulur:
+```scheme
+(define (build-file filename)
+  ...
+  (let ((source (read-source-file filename)))
+    (if source ...
+           (let ((tokens (tokenize source))) ; -> Lexer tetikleniyor
+             (let ((ast (parse source)))     ; -> Parser tetikleniyor
+               ...
+               (if (analyze ast)             ; -> Semantic tetiği!
+                   (begin
+                     (generate-program ast "Main.j") ; -> Jasmin Code Gen
+                     ... )))))))
+```
+
+---
 
 ## 1. Kaynak Kodumuz (`examplos/ornek.kp`)
 ```krypto
