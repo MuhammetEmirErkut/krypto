@@ -140,6 +140,32 @@ Karakter bir harf ile başlıyorsa (`char-identifier-start?`) sistem `read-ident
       ...
 ```
 
+### 2.5 Lexer Çıktısı (Token Listesi)
+
+Lexer tüm kaynak kodu taradıktan sonra tokenları sıralı bir Scheme listesi (list) veri yapısı içerisinde tutar. Okuma sonlandığında akış, düz bir metinden çıkıp parser'ın kabul edebileceği ardışık token nesnelerine dönüşür.
+
+`ornek.kp` dosyası `(tokenize source)` işleminden geçtiğinde elde edilen çıktı şu yapıya benzeyen bir formda tutulur:
+
+```scheme
+'(
+  #<token type: TOKEN-KEYWORD value: "int" line: 1 col: 1>
+  #<token type: TOKEN-KEYWORD value: "fun" line: 1 col: 5>
+  #<token type: TOKEN-IDENTIFIER value: "topla_ve_kare_al" line: 1 col: 9>
+  #<token type: TOKEN-LPAREN value: "(" line: 1 col: 25>
+  #<token type: TOKEN-IDENTIFIER value: "a" line: 1 col: 26>
+  #<token type: TOKEN-COLON value: ":" line: 1 col: 27>
+  #<token type: TOKEN-KEYWORD value: "int" line: 1 col: 29>
+  #<token type: TOKEN-COMMA value: "," line: 1 col: 32>
+  #<token type: TOKEN-IDENTIFIER value: "b" line: 1 col: 34>
+  #<token type: TOKEN-COLON value: ":" line: 1 col: 35>
+  #<token type: TOKEN-KEYWORD value: "int" line: 1 col: 37>
+  #<token type: TOKEN-RPAREN value: ")" line: 1 col: 40>
+  #<token type: TOKEN-LBRACE value: "{" line: 1 col: 42>
+  ... (ve devamı)
+)
+```
+Bu sayede her sözcük parçası satır ve sütun bilgisiyle sarmalanarak bir sonraki aşamaya (Parser) veri bütünlüğü korunarak aktarılır.
+
 ---
 
 ## 3. Parser (Sentaks Analizi ve AST Üretimi)
@@ -210,6 +236,38 @@ Matematiksel işlemlerde Krypto, öncelik tırmanması (precedence climbing) alg
                    (cdr right-result))))
 ...
 ```
+
+### 3.3 Parser Çıktısı (AST - Soyut Sözdizim Ağacı Formu)
+
+Parser'ın birincil görevi, lexer'ın ürettiği düz (lineer) token listesini, dilin gramer kurallarına (hiyerarşiye ve işlem önceliğine) uygun bir Soyut Sözdizim Ağacına (Abstract Syntax Tree - AST) çevirmektir.
+
+`ornek.kp` kodunda yer alan `topla_ve_kare_al` fonksiyonu ayrıştırıldığında (`parse` adımında), arka planda anlamsal bağları kurulmuş şöyle bir S-Expression (Lisp/Scheme ağaç formasyonu) yapısına dönüştürülür:
+
+```scheme
+(program
+  (function-decl
+    (name "topla_ve_kare_al")
+    (return-type (type-name "int"))
+    (params 
+      ((param "a" (type-name "int"))
+       (param "b" (type-name "int"))))
+    (body (block-stmt
+            (list
+              (let-stmt
+                (name "toplam")
+                (type (type-name "int"))
+                (initializer (binary-expr 'add
+                               (identifier "a")
+                               (identifier "b"))))
+              (return-stmt
+                (value (binary-expr 'multiply
+                         (identifier "toplam")
+                         (identifier "toplam")))))))))
+  ... (main fonksiyonu ve programın kalanı)
+)
+```
+
+Bu form sayesinde program basit karakter yığını olmaktan çıkar; tipler, değişkenler, dönüş değerleri, matematik işlem formülleriyle `(ebeveyn node + çocuk node'lar)` modelinde anlamlı bir veriye dönüşür. Tip denetimi ve JVM bytecode üretimi (Jasmin kodları) işlemleri, sadece bu ağaç yapısı üzerinde gezinilerek (tree traversal) sağlanır.
 
 ---
 
