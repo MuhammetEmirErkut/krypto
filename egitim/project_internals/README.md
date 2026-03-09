@@ -19,6 +19,8 @@ Orjinal kaynak kodun satır satır Türkçe açıklamalı kopyalarını buradan 
     *   `src/parser/parser.scm` dosyasının detaylı açıklaması (AST oluşturma).
 *   **[Semantik Analiz Kod İncelemesi](./kod_analizi_semantic.scm)**
     *   `src/semantic/analyzer.scm` dosyasının detaylı açıklaması (Tip kontrolü).
+*   **[Jasmin Code Gen Kod Analizi](./kod_analizi_jasmin.scm)**
+    *   `src/codegen/jasmin.scm` dosyasının detaylı açıklaması (JVM Bytecode üretimi).
 
 ## Nasıl Deneyebilirim?
 

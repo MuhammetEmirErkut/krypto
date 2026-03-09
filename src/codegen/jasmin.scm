@@ -3,34 +3,39 @@
 ; ============================================================================
 
 
-(define *global-vars* #f)
-(define *global-funcs-ret* #f)
-(define *global-funcs-args* #f)
-(define *local-vars* #f)
-(define *local-types* #f)
-(define *next-local* 0)
-(define *label-counter* 0)
+; Global states and counters used during code generation
+(define *global-vars* #f)         ; Hash table for storing global variables
+(define *global-funcs-ret* #f)    ; Hash table for storing global function return types
+(define *global-funcs-args* #f)   ; Hash table for storing global function argument types
+(define *local-vars* #f)          ; Hash table mapping local variable names to JVM local indices
+(define *local-types* #f)         ; Hash table mapping local variable names to their types
+(define *next-local* 0)           ; Counter for tracking the next available JVM local variable index
+(define *label-counter* 0)        ; Counter for generating unique jump labels
 
+; Generates and returns a new unique jump label for JVM control flow (e.g., L1, L2)
 (define (next-label)
   (set! *label-counter* (+ *label-counter* 1))
   (string-append "L" (number->string *label-counter*)))
 
+; Emits (writes out) a line of Jasmin assembly code to both the output file (port) and standard output
 (define (emit port . args)
   (for-each (lambda (arg) 
-              (display arg port)
-              (display arg)) 
+              (display arg port)  ; Write to file
+              (display arg))      ; Write to console for debugging
             args)
   (newline port)
   (newline))
 
+; Maps a compiler internal type symbol (int, float, etc.) to JVM jasmin type descriptor (I, F, etc.)
 (define (type->jasmin t)
   (case t
-    ((int) "I")
-    ((float) "F")
-    ((bool) "I")
-    ((string) "Ljava/lang/String;")
-    ((void) "V")))
+    ((int) "I")         ; Integer
+    ((float) "F")       ; Float
+    ((bool) "I")        ; Boolean represented as Integer in JVM
+    ((string) "Ljava/lang/String;") ; Java String class
+    ((void) "V")))      ; Void return type
 
+; Helper function to resolve the string name wrapper of a primitive type AST node into a proper type symbol
 (define (ast-type->sym type-node)
   (if (not type-node) 'void
       (let ((t (ast-type type-node)))
@@ -38,6 +43,7 @@
             (string->symbol (ast-get type-node 'name))
             'void))))
 
+; Infers the resulting type of an expression by examining the AST node recursively
 (define (infer-type expr)
   (if (not expr) 'void
       (cond
@@ -65,6 +71,7 @@
          (infer-type (ast-get expr 'target)))
         (else 'void))))
 
+; Generates the Jasmin bytecode logic for a given expression and pushes its result onto the operand stack
 (define (generate-expr port expr)
   
   (cond
@@ -98,7 +105,7 @@
            ((minus)
             (if (eq? t 'float) (emit port "    fneg") (emit port "    ineg")))
            ((not)
-            ; logic not (1 - val)
+            ; logical NOT: if 0 then 1 else 0
             (let ((l-true (next-label))
                   (l-end (next-label)))
               (emit port "    ifeq " l-true)
@@ -155,11 +162,13 @@
             (name (if (identifier? callee) (ast-get callee 'name) #f)))
        (if (and name (string=? name "print"))
            (begin
+             ; Print logic maps natively to Java's System.out.println
              (emit port "    getstatic java/lang/System/out Ljava/io/PrintStream;")
              (let* ((arg (car (ast-get expr 'arguments)))
                     (t (infer-type arg)))
-               (generate-expr port arg)
+               (generate-expr port arg) ; evaluate and push argument onto stack
                (let ((desc (if (eq? t 'string) "Ljava/lang/String;" (type->jasmin t))))
+                 ; Call the println method using the appropriate type descriptor
                  (emit port "    invokevirtual java/io/PrintStream/println(" desc ")V"))))
            (if name
                (let ((ret-sym (hashtable-ref *global-funcs-ret* name #f)))
@@ -194,6 +203,7 @@
                (emit port "    putstatic Main/" name " " (type->jasmin t)))))))
     ))
 
+; Generates Jasmin bytecode instructions for statement nodes (if, while, for, variable declarations)
 (define (generate-stmt port stmt)
   
   (cond
@@ -286,6 +296,7 @@
                
     (else (display "Unknown stmt: " port)(display (ast-type stmt) port)(newline port))))
 
+; Generates the method block for a function declaration including parameter mappings and body statements
 (define (generate-function port decl)
   (let ((name (ast-get decl 'name))
         (params (ast-get decl 'params))
@@ -320,8 +331,9 @@
             
         (emit port ".end method")))))
 
+; The main entry point. Traverses the global AST tree and constructs the full .class file structure (Jasmin format)
 (define (generate-program ast out-file)
-  (let ((port (open-output-file out-file 'replace)))
+  (let ((port (open-output-file out-file 'replace))) ; Open the output .j file
     (set! *label-counter* 0)
     (set! *global-vars* (make-hashtable string-hash string=?))
     (set! *global-funcs-ret* (make-hashtable string-hash string=?))
