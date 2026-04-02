@@ -4,29 +4,40 @@
 ;
 ; Recursive descent parser that converts token stream to AST.
 ;
-; Grammar Overview (simplified):
+; Grammar Overview:
 ;
 ;   program        → declaration* EOF
 ;   declaration    → funDecl | structDecl | statement
-;   funDecl        → type? "fun" IDENTIFIER "(" params? ")" block
-;   statement      → letStmt | ifStmt | whileStmt | forStmt | returnStmt
-;                  | block | exprStmt
+;   
+;   funDecl        → type? "fun" IDENTIFIER "(" params? ")" ("->" type)? block
+;   structDecl     → "struct" IDENTIFIER "{" field* "}"
+;   field          → IDENTIFIER ":" type (";" | ",")?
+;   
+;   statement      → letStmt | ifStmt | whileStmt | forStmt | returnStmt | block | exprStmt
+;   letStmt        → "let" "mut"? IDENTIFIER (":" type)? "=" expression ";"
+;   returnStmt     → "return" expression? ";"
+;   ifStmt         → "if" "(" expression ")" block ("else" (ifStmt | block))?
+;   whileStmt      → "while" "(" expression ")" block
+;   forStmt        → "for" "(" init? ";" condition? ";" update? ")" block
+;   exprStmt       → expression ";"
 ;   block          → "{" declaration* "}"
-;   letStmt        → "let" "mut"? IDENTIFIER (":" type)? "=" expression
-;   exprStmt       → expression
-;
+;   
+;   type           → primitiveType | namedType | arrayType
+;   primitiveType  → "int" | "float" | "string" | "bool" | "void"
+;   namedType      → IDENTIFIER
+;   arrayType      → "[" type "]"
+;   
 ;   expression     → assignment
 ;   assignment     → IDENTIFIER "=" assignment | logicOr
-;   logicOr        → logicAnd ("or" logicAnd)*
-;   logicAnd       → equality ("and" equality)*
+;   logicOr        → logicAnd (("or" | "||") logicAnd)*
+;   logicAnd       → equality (("and" | "&&") equality)*
 ;   equality       → comparison (("==" | "!=") comparison)*
 ;   comparison     → term (("<" | ">" | "<=" | ">=") term)*
 ;   term           → factor (("+" | "-") factor)*
 ;   factor         → unary (("*" | "/" | "%") unary)*
 ;   unary          → ("!" | "-") unary | call
-;   call           → primary ("(" arguments? ")" | "." IDENTIFIER)*
-;   primary        → NUMBER | STRING | "true" | "false" | "null"
-;                  | IDENTIFIER | "(" expression ")"
+;   call           → primary (("(" arguments? ")") | ("." IDENTIFIER) | ("[" expression "]"))*
+;   primary        → INTEGER | FLOAT | STRING | "true" | "false" | "null" | IDENTIFIER | "(" expression ")"
 ;
 ; ============================================================================
 

@@ -1,0 +1,65 @@
+// Prime Number Check
+// Determine if a number is prime
+
+fun isPrime(n: int) -> bool {
+    if (n <= 1) {
+        return false;
+    }
+    
+    if (n <= 3) {
+        return true;
+    }
+    
+    if (n % 2 == 0 || n % 3 == 0) {
+        return false;
+    }
+    
+    for (let i: int = 5; i * i <= n; i = i + 6) {
+        if (n % i == 0 || n % (i + 2) == 0) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+fun isPrimeBasic(n: int) -> bool {
+    if (n <= 1) {
+        return false;
+    }
+    
+    for (let i: int = 2; i < n; i = i + 1) {
+        if (n % i == 0) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+fun main() {
+    print("Prime Check (Optimized):");
+    
+    // Test some numbers
+    let testNums: int[] = [1, 2, 3, 4, 5, 17, 18, 19, 20, 97, 100, 101];
+    let len: int = 12;
+    
+    for (let i: int = 0; i < len; i = i + 1) {
+        let n: int = testNums[i];
+        if (isPrime(n)) {
+            print(n);
+            print(" is prime");
+        } else {
+            print(n);
+            print(" is not prime");
+        }
+    }
+    
+    // Find all primes up to 50
+    print("Primes up to 50:");
+    for (let j: int = 2; j <= 50; j = j + 1) {
+        if (isPrime(j)) {
+            print(j);
+        }
+    }
+}

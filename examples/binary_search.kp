@@ -1,0 +1,46 @@
+// Binary Search Algorithm
+// Efficient search in sorted arrays - O(log n) complexity
+
+fun binarySearch(arr: int[], n: int, target: int) -> int {
+    let left: int = 0;
+    let right: int = n - 1;
+    
+    while (left <= right) {
+        let mid: int = left + (right - left) / 2;
+        
+        if (arr[mid] == target) {
+            return mid;
+        }
+        
+        if (arr[mid] < target) {
+            left = mid + 1;
+        } else {
+            right = mid - 1;
+        }
+    }
+    
+    return -1;  // Not found
+}
+
+fun main() {
+    let arr: int[] = [2, 3, 4, 10, 40, 50, 60, 70];
+    let n: int = 8;
+    let target: int = 40;
+    
+    let result: int = binarySearch(arr, n, target);
+    
+    if (result == -1) {
+        print("Element not found");
+    } else {
+        print("Element found at index:");
+        print(result);
+    }
+    
+    // Search for element that doesn't exist
+    let target2: int = 100;
+    let result2: int = binarySearch(arr, n, target2);
+    
+    if (result2 == -1) {
+        print("Element 100 not found");
+    }
+}

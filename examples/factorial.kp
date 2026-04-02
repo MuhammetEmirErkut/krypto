@@ -1,0 +1,49 @@
+// Factorial - Iterative and Recursive Implementation
+// Calculate factorial of a number (n! = n * (n-1) * ... * 1)
+
+fun factorialIterative(n: int) -> int {
+    if (n < 0) {
+        return -1;  // Error: negative number
+    }
+    
+    let result: int = 1;
+    for (let i: int = 2; i <= n; i = i + 1) {
+        result = result * i;
+    }
+    
+    return result;
+}
+
+fun factorialRecursive(n: int) -> int {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorialRecursive(n - 1);
+}
+
+fun main() {
+    // Test iterative version
+    print("Factorial (Iterative):");
+    print("5! = ");
+    print(factorialIterative(5));
+    
+    print("0! = ");
+    print(factorialIterative(0));
+    
+    print("10! = ");
+    print(factorialIterative(10));
+    
+    // Test recursive version
+    print("Factorial (Recursive):");
+    print("5! = ");
+    print(factorialRecursive(5));
+    
+    print("7! = ");
+    print(factorialRecursive(7));
+    
+    // Calculate factorials from 0 to 10
+    print("Factorials 0-10:");
+    for (let i: int = 0; i <= 10; i = i + 1) {
+        print(factorialIterative(i));
+    }
+}

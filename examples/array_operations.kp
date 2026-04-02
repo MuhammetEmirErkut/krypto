@@ -1,0 +1,83 @@
+// Array Operations - Sum, Average, Max, Min
+// Common array operations in one file
+
+fun sumArray(arr: int[], n: int) -> int {
+    let total: int = 0;
+    for (let i: int = 0; i < n; i = i + 1) {
+        total = total + arr[i];
+    }
+    return total;
+}
+
+fun averageArray(arr: int[], n: int) -> int {
+    let total: int = sumArray(arr, n);
+    return total / n;
+}
+
+fun findMax(arr: int[], n: int) -> int {
+    let max: int = arr[0];
+    for (let i: int = 1; i < n; i = i + 1) {
+        if (arr[i] > max) {
+            max = arr[i];
+        }
+    }
+    return max;
+}
+
+fun findMin(arr: int[], n: int) -> int {
+    let min: int = arr[0];
+    for (let i: int = 1; i < n; i = i + 1) {
+        if (arr[i] < min) {
+            min = arr[i];
+        }
+    }
+    return min;
+}
+
+fun reverseArray(arr: int[], n: int) {
+    let start: int = 0;
+    let end: int = n - 1;
+    
+    while (start < end) {
+        let temp: int = arr[start];
+        arr[start] = arr[end];
+        arr[end] = temp;
+        start = start + 1;
+        end = end - 1;
+    }
+}
+
+fun printArray(arr: int[], n: int) {
+    for (let i: int = 0; i < n; i = i + 1) {
+        print(arr[i]);
+    }
+}
+
+fun main() {
+    let arr: int[] = [5, 10, 15, 20, 25, 30];
+    let n: int = 6;
+    
+    print("Original array:");
+    printArray(arr, n);
+    
+    print("Sum:");
+    print(sumArray(arr, n));
+    
+    print("Average:");
+    print(averageArray(arr, n));
+    
+    print("Maximum:");
+    print(findMax(arr, n));
+    
+    print("Minimum:");
+    print(findMin(arr, n));
+    
+    // Test reverse
+    let arr2: int[] = [1, 2, 3, 4, 5];
+    print("Before reverse:");
+    printArray(arr2, 5);
+    
+    reverseArray(arr2, 5);
+    print("After reverse:");
+    printArray(arr2, 5);
+}
