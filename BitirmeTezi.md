@@ -64,6 +64,7 @@
    - 3.6. Fonksiyonlar ve Parametre Mekanizması
    - 3.7. Struct Tanımlamaları ve Kullanımı
    - 3.8. Örnek Program Analizleri
+   - 3.9. Krypto Tümleşik Geliştirme Ortamı (IDE) Tasarımı
 7. [4. BULGULAR](#4-bulgular)
    - 4.1. Sözlüksel ve Sözdizimsel Analiz Başarımı
    - 4.2. Jasmin Kod Üretimi Performans Metrikleri
@@ -872,6 +873,20 @@ fun main() {
 21
 34
 ```
+
+### 3.9. Krypto Tümleşik Geliştirme Ortamı (IDE) Tasarımı
+
+Krypto programlama dilinin kullanım kolaylığını ve geliştirici deneyimini (developer experience) artırmak amacıyla, derleyici altyapısına entegre çalışan bir Tümleşik Geliştirme Ortamı (IDE) tasarlanmış ve geliştirilmiştir. Söz konusu IDE, Python programlama dili ve modern kullanıcı arayüzü kütüphanesi olan `customtkinter` kullanılarak inşa edilmiştir.
+
+Geleneksel Tkinter kütüphanesinin sunduğu arayüz kısıtlamalarını aşmak ve güncel tasarım standartlarına uyum sağlamak için tercih edilen `customtkinter`, uygulamanın hem aydınlık (light) hem de karanlık (dark) modları destekleyen modern bir görünüme kavuşmasını sağlamıştır. Geliştirilen IDE'nin temel tasarım felsefesinde, kullanıcıya karmaşadan uzak, net ve endüstriyel (keskin hatlı, gri tonlamalı ve köşesiz tasarım) bir kod yazma deneyimi sunmak hedeflenmiştir.
+
+**IDE'nin Temel Özellikleri:**
+1. **Kod Editörü (Code Editor):** Kullanıcıların Krypto kaynak kodlarını doğrudan yazabilecekleri ve düzenleyebilecekleri entegre bir metin düzenleyici alanıdır.
+2. **Doğrudan Derleme Entegrasyonu:** IDE üzerinden tek bir tıklama ile, yazılan kodlar arkaplanda çalışan Scheme tabanlı Krypto derleyicisine (`src/main.scm`) yönlendirilerek derleme (Lexing -> Parsing -> Jasmin -> Bytecode) süreci başlatılmaktadır.
+3. **Konsol Çıktı Yönetimi (Console Output):** Derleme süreç logları, anlık hata mesajları (syntax/tip hataları) veya çalışma zamanında (runtime) yürütme sonrasında elde edilen JVM çıktıları entegre konsol penceresinden doğrudan geliştiriciye sunulmaktadır.
+4. **Modern Kullanıcı Arayüzü:** Koyu renk paletlerine (grayscale) dayanan minimalist yaklaşımıyla, dışa bağımlılık hissettirmeyen profesyonel bir çalışma masası hissiyatı oluşturulmuştur.
+
+Bu IDE entegrasyonu, Krypto dilinin yalnızca teorik bir derleyici altyapısından ibaret olmadığını; aynı zamanda pratik düzeyde doğrudan kullanılabilir, yazılım üretimine ve algoritmik testlere hazır, bütüncül bir ürün paketine dönüştüğünü kanıtlamaktadır.
 
 ---
 
