@@ -1,6 +1,6 @@
 // Krypto Programming Language
 // Basit bir ornek proje
-int fun topla_ve_kare_al(a: int, b: int) {
+fun topla_ve_kare_al(a: int, b: int) -> int {
     let toplam: int = a + b;
     return toplam * toplam;
 }

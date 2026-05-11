@@ -152,6 +152,19 @@
 ; Type Parsing
 ; ----------------------------------------------------------------------------
 
+(define (parse-array-type-suffix base-type state)
+  "Parse array suffix '[]' for a given base type"
+  (if (parser-check state 'TOKEN-LBRACKET)
+      (let* ((result1 (parser-advance state))
+             (state1 (cdr result1))
+             (result2 (expect state1 'TOKEN-RBRACKET "Expected ']' after '[' in array type")))
+        (parse-array-type-suffix 
+         (make-array-type base-type 
+                          (cadr (ast-get base-type 'location)) 
+                          (caddr (ast-get base-type 'location))) 
+         (cdr result2)))
+      (cons base-type state)))
+
 (define (parse-type state)
   "Parse a type annotation"
   (let ((tok (parser-current state)))
@@ -159,32 +172,15 @@
       ; Primitive types
       ((and (eq? (token-type tok) 'TOKEN-KEYWORD)
             (member (token-value tok) '("int" "float" "string" "bool" "void")))
-       (let ((result (parser-advance state)))
-         (cons (make-primitive-type (token-value tok)
-                                    (token-line tok)
-                                    (token-column tok))
-               (cdr result))))
+       (let* ((result (parser-advance state))
+              (base-type (make-primitive-type (token-value tok) (token-line tok) (token-column tok))))
+         (parse-array-type-suffix base-type (cdr result))))
       
       ; Named types (identifiers)
       ((eq? (token-type tok) 'TOKEN-IDENTIFIER)
-       (let ((result (parser-advance state)))
-         (cons (make-named-type (token-value tok)
-                                (token-line tok)
-                                (token-column tok))
-               (cdr result))))
-      
-      ; Array types: [type]
-      ((parser-check state 'TOKEN-LBRACKET)
-       (let* ((result1 (parser-advance state))
-              (state1 (cdr result1))
-              (elem-result (parse-type state1))
-              (elem-type (car elem-result))
-              (state2 (cdr elem-result))
-              (result3 (expect state2 'TOKEN-RBRACKET "Expected ']' after array type")))
-         (cons (make-array-type elem-type
-                                (token-line tok)
-                                (token-column tok))
-               (cdr result3))))
+       (let* ((result (parser-advance state))
+              (base-type (make-named-type (token-value tok) (token-line tok) (token-column tok))))
+         (parse-array-type-suffix base-type (cdr result))))
       
       (else
        (parse-error state "Expected type")))))
@@ -265,6 +261,26 @@
                                 (token-line tok)
                                 (token-column tok))
                (cdr result3))))
+               
+      ; Array literal: [expr1, expr2, ...]
+      ((parser-check state 'TOKEN-LBRACKET)
+       (let* ((result1 (parser-advance state))
+              (lbracket-tok (car result1))
+              (state1 (cdr result1)))
+         (if (parser-check state1 'TOKEN-RBRACKET)
+             (let ((result2 (parser-advance state1)))
+               (cons (make-array-literal '() (token-line lbracket-tok) (token-column lbracket-tok))
+                     (cdr result2)))
+             (let loop ((elements '()) (curr-state state1))
+               (let* ((expr-result (parse-expression curr-state))
+                      (expr (car expr-result))
+                      (next-state (cdr expr-result))
+                      (new-elements (append elements (list expr))))
+                 (if (parser-check next-state 'TOKEN-COMMA)
+                     (loop new-elements (cdr (parser-advance next-state)))
+                     (let ((result3 (expect next-state 'TOKEN-RBRACKET "Expected ']' after array elements")))
+                       (cons (make-array-literal new-elements (token-line lbracket-tok) (token-column lbracket-tok))
+                             (cdr result3)))))))))
       
       (else
        (parse-error state "Expected expression")))))
@@ -571,7 +587,7 @@
          (state1 (cdr expr-result)))
     ; Check if followed by '='
     (if (parser-check state1 'TOKEN-EQUALS)
-        (if (identifier? expr)
+        (if (or (identifier? expr) (index-expr? expr))
             (let* ((result (parser-advance state1))
                    (eq-tok (car result))
                    (state2 (cdr result))

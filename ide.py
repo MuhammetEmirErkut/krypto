@@ -27,6 +27,25 @@ TAB_ACTIVE = "#2a2a2a"
 TAB_INACTIVE = "#1a1a1a"
 
 
+class LineNumbers(tk.Canvas):
+    """Side canvas to draw line numbers for a text widget."""
+    def __init__(self, parent, text_widget, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.text_widget = text_widget
+        self.configure(width=35, bg=PANEL_COL, highlightthickness=0, bd=0)
+
+    def redraw(self):
+        self.delete("all")
+        i = self.text_widget.index("@0,0")
+        while True:
+            dline = self.text_widget.dlineinfo(i)
+            if dline is None: break
+            y = dline[1]
+            linenum = str(i).split(".")[0]
+            # Right align line numbers
+            self.create_text(30, y, anchor="ne", text=linenum, fill=SUBTEXT_COL, font=("Menlo", 13))
+            i = self.text_widget.index("%s+1line" % i)
+
 class EditorTab:
     """Holds state for one open file tab."""
     def __init__(self, filepath, content=""):
@@ -159,18 +178,28 @@ class KryptoIDE(ctk.CTk):
                                          fg_color=PANEL_COL, border_width=1, border_color=SURFACE_COL)
         self.editor_frame.pack(fill="both", expand=True, padx=(10, 16), pady=(16, 6))
         self.editor_frame.grid_rowconfigure(1, weight=1)
-        self.editor_frame.grid_columnconfigure(0, weight=1)
+        self.editor_frame.grid_columnconfigure(1, weight=1)
 
         # Tab bar (scrollable frame of tab buttons)
         self.tab_bar = tk.Frame(self.editor_frame, bg=PANEL_COL, height=30)
-        self.tab_bar.grid(row=0, column=0, padx=5, pady=(5, 0), sticky="ew")
+        self.tab_bar.grid(row=0, column=0, columnspan=2, padx=5, pady=(5, 0), sticky="ew")
 
         self.editor = ctk.CTkTextbox(self.editor_frame,
                                      font=ctk.CTkFont(family="Menlo", size=15),
                                      undo=True, fg_color="transparent", text_color=TEXT_COL)
-        self.editor.grid(row=1, column=0, padx=10, pady=(5, 10), sticky="nsew")
+        self.editor.grid(row=1, column=1, padx=(0, 10), pady=(5, 10), sticky="nsew")
+
+        # Line numbers canvas
+        self.line_nums = LineNumbers(self.editor_frame, self.editor._textbox)
+        self.line_nums.grid(row=1, column=0, padx=(5, 0), pady=(5, 10), sticky="ns")
+
         self.setup_syntax_highlighting()
         self.editor.bind("<KeyRelease>", self.on_key_release)
+        self.editor.bind("<Button-1>", lambda e: self.line_nums.redraw())
+        self.editor.bind("<MouseWheel>", lambda e: self.line_nums.after(1, self.line_nums.redraw))
+        self.editor._textbox.bind("<Configure>", lambda e: self.line_nums.redraw())
+        # Hook into the scrollbar of CTkTextbox if possible, or just use periodic update
+        self._update_line_numbers_loop()
 
         # Console Pane
         console_wrapper = tk.Frame(self.v_pane, bg=BG_COL)
@@ -460,36 +489,69 @@ class KryptoIDE(ctk.CTk):
     # ================================================================
     def setup_syntax_highlighting(self):
         txt = self.editor._textbox
-        txt.tag_configure("Keyword", foreground="#ffffff")
-        txt.tag_configure("Type", foreground="#c0c0c0")
-        txt.tag_configure("String", foreground="#8a8a8a")
-        txt.tag_configure("Number", foreground="#e0e0e0")
-        txt.tag_configure("Comment", foreground="#555555")
+        # One Dark inspired palette
+        txt.tag_configure("Keyword", foreground="#C678DD", font=ctk.CTkFont(family="Menlo", size=15, weight="bold"))
+        txt.tag_configure("Type", foreground="#E5C07B")
+        txt.tag_configure("String", foreground="#98C379")
+        txt.tag_configure("Number", foreground="#D19A66")
+        txt.tag_configure("Comment", foreground="#5C6370", font=ctk.CTkFont(family="Menlo", size=15, slant="italic"))
+        txt.tag_configure("Boolean", foreground="#D19A66")
+        txt.tag_configure("Function", foreground="#61AFEF", font=ctk.CTkFont(family="Menlo", size=15, weight="bold"))
+        txt.tag_configure("Operator", foreground="#56B6C2")
 
-        self.keywords = ["fun", "if", "else", "while", "for", "return", "let", "print"]
+        self.keywords = ["fun", "if", "else", "while", "for", "return", "let", "print", "struct", "null"]
         self.types = ["int", "float", "bool", "string", "void"]
+        self.booleans = ["true", "false"]
 
     def on_key_release(self, event=None):
         txt = self.editor._textbox
-        for tag in ["Keyword", "Type", "String", "Number", "Comment"]:
+        for tag in ["Keyword", "Type", "String", "Number", "Comment", "Boolean", "Function", "Operator"]:
             txt.tag_remove(tag, "1.0", "end")
 
         content = self.editor.get("1.0", "end-1c")
         if not content:
             return
 
+        # Keywords
         for kw in self.keywords:
             for m in re.finditer(r'\b' + kw + r'\b', content):
                 txt.tag_add("Keyword", f"1.0+{m.start()}c", f"1.0+{m.end()}c")
+        
+        # Types
         for ty in self.types:
             for m in re.finditer(r'\b' + ty + r'\b', content):
                 txt.tag_add("Type", f"1.0+{m.start()}c", f"1.0+{m.end()}c")
+        
+        # Booleans
+        for b in self.booleans:
+            for m in re.finditer(r'\b' + b + r'\b', content):
+                txt.tag_add("Boolean", f"1.0+{m.start()}c", f"1.0+{m.end()}c")
+
+        # Function definitions
+        for m in re.finditer(r'\bfun\s+([a-zA-Z_][a-zA-Z0-9_]*)', content):
+            start = m.start(1)
+            end = m.end(1)
+            txt.tag_add("Function", f"1.0+{start}c", f"1.0+{end}c")
+
+        # Operators
+        for m in re.finditer(r'[+\-*/%=<>!&|]', content):
+            txt.tag_add("Operator", f"1.0+{m.start()}c", f"1.0+{m.end()}c")
+
         for m in re.finditer(r'"[^"]*"', content):
             txt.tag_add("String", f"1.0+{m.start()}c", f"1.0+{m.end()}c")
         for m in re.finditer(r'\b\d+(\.\d+)?\b', content):
             txt.tag_add("Number", f"1.0+{m.start()}c", f"1.0+{m.end()}c")
         for m in re.finditer(r'//.*', content):
             txt.tag_add("Comment", f"1.0+{m.start()}c", f"1.0+{m.end()}c")
+        
+        # Redraw line numbers
+        self.line_nums.redraw()
+
+    def _update_line_numbers_loop(self):
+        """Periodically refresh line numbers to ensure sync with scrolling."""
+        if hasattr(self, "line_nums"):
+            self.line_nums.redraw()
+        self.after(200, self._update_line_numbers_loop)
 
     # ================================================================
     #  SETTINGS

@@ -40,19 +40,23 @@ fun isPrimeBasic(n: int) -> bool {
 fun main() {
     print("Prime Check (Optimized):");
     
-    // Test some numbers
-    let testNums: int[] = [1, 2, 3, 4, 5, 17, 18, 19, 20, 97, 100, 101];
-    let len: int = 12;
+    // Test specific numbers
+    if (isPrime(17)) {
+        print("17 is prime");
+    } else {
+        print("17 is not prime");
+    }
     
-    for (let i: int = 0; i < len; i = i + 1) {
-        let n: int = testNums[i];
-        if (isPrime(n)) {
-            print(n);
-            print(" is prime");
-        } else {
-            print(n);
-            print(" is not prime");
-        }
+    if (isPrime(20)) {
+        print("20 is prime");
+    } else {
+        print("20 is not prime");
+    }
+    
+    if (isPrime(97)) {
+        print("97 is prime");
+    } else {
+        print("97 is not prime");
     }
     
     // Find all primes up to 50

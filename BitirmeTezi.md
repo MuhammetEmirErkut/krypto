@@ -710,12 +710,12 @@ let mut w: float = 3.14;
 let global = 1;  // Global scope
 
 fun foo() {
-    let local = 2;  // Function scope
-    {
-        let block = 3;  // Block scope
-        print(block);   // OK: 3
-    }
-    print(block);  // ERROR: block not in scope
+let local = 2;  // Function scope
+{
+let block = 3;  // Block scope
+print(block);   // OK: 3
+}
+print(block);  // ERROR: block not in scope
 }
 ```
 
@@ -758,11 +758,11 @@ Kontrol akışı yapıları, programın yürütme akışını dinamik olarak yö
 let x: int = 10;
 
 if (x > 0) {
-    print("positive");
+print("positive");
 } else if (x < 0) {
-    print("negative");
+print("negative");
 } else {
-    print("zero");
+print("zero");
 }
 ```
 
@@ -771,8 +771,8 @@ if (x > 0) {
 ```krypto
 let mut i: int = 0;
 while (i < 5) {
-    print(i);
-    i = i + 1;
+print(i);
+i = i + 1;
 }
 ```
 
@@ -780,10 +780,10 @@ while (i < 5) {
 
 ```krypto
 for (let i: int = 0; i < 10; i = i + 1) {
-    if (i % 2 == 0) {
-        continue;  // Skip even numbers
-    }
-    print(i);
+if (i % 2 == 0) {
+continue;  // Skip even numbers
+}
+print(i);
 }
 ```
 
@@ -796,20 +796,20 @@ Fonksiyonlar, tekrar kullanılabilir kod bloklarıdır ve prosedürel programlam
 ```krypto
 // No return type (void)
 fun greet(name: string) {
-    print("Hello, " + name);
+print("Hello, " + name);
 }
 
 // With return type
 int fun add(a: int, b: int) -> int {
-    return a + b;
+return a + b;
 }
 
 // Recursive
 int fun factorial(n: int) -> int {
-    if (n <= 1) {
-        return 1;
-    }
-    return n * factorial(n - 1);
+if (n <= 1) {
+return 1;
+}
+return n * factorial(n - 1);
 }
 ```
 
@@ -827,14 +827,14 @@ Struct (structure), kullanıcı tanımlı composite type'dır ve semantik olarak
 
 ```krypto
 struct Point {
-    x: int,
-    y: int
+x: int,
+y: int
 }
 
 fun main() {
-    // Struct usage (future feature)
-    // let p = Point { x: 10, y: 20 };
-    // print(p.x);
+// Struct usage (future feature)
+// let p = Point { x: 10, y: 20 };
+// print(p.x);
 }
 ```
 
@@ -846,17 +846,17 @@ Bu bölümde, Krypto dilinin tüm özelliklerini bir arada kullanan örnek progr
 
 ```krypto
 int fun fibonacci(n: int) -> int {
-    if (n <= 1) {
-        return n;
-    }
-    return fibonacci(n - 1) + fibonacci(n - 2);
+if (n <= 1) {
+return n;
+}
+return fibonacci(n - 1) + fibonacci(n - 2);
 }
 
 fun main() {
-    for (let i: int = 0; i < 10; i = i + 1) {
-        let fib: int = fibonacci(i);
-        print(fib);
-    }
+for (let i: int = 0; i < 10; i = i + 1) {
+let fib: int = fibonacci(i);
+print(fib);
+}
 }
 ```
 

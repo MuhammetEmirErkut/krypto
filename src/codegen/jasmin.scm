@@ -28,20 +28,26 @@
 
 ; Maps a compiler internal type symbol (int, float, etc.) to JVM jasmin type descriptor (I, F, etc.)
 (define (type->jasmin t)
-  (case t
-    ((int) "I")         ; Integer
-    ((float) "F")       ; Float
-    ((bool) "I")        ; Boolean represented as Integer in JVM
-    ((string) "Ljava/lang/String;") ; Java String class
-    ((void) "V")))      ; Void return type
+  (if (pair? t)
+      (if (eq? (car t) 'array-type)
+          (string-append "[" (type->jasmin (cadr t)))
+          "V")
+      (case t
+        ((int) "I")         ; Integer
+        ((float) "F")       ; Float
+        ((bool) "I")        ; Boolean represented as Integer in JVM
+        ((string) "Ljava/lang/String;") ; Java String class
+        ((void) "V")
+        (else "V"))))     ; Void return type
 
 ; Helper function to resolve the string name wrapper of a primitive type AST node into a proper type symbol
 (define (ast-type->sym type-node)
   (if (not type-node) 'void
       (let ((t (ast-type type-node)))
-        (if (eq? t 'primitive-type)
-            (string->symbol (ast-get type-node 'name))
-            'void))))
+        (cond
+          ((eq? t 'primitive-type) (string->symbol (ast-get type-node 'name)))
+          ((eq? t 'array-type) (list 'array-type (ast-type->sym (ast-get type-node 'element-type))))
+          (else 'void)))))
 
 ; Infers the resulting type of an expression by examining the AST node recursively
 (define (infer-type expr)
@@ -51,6 +57,16 @@
         ((float-literal? expr) 'float)
         ((string-literal? expr) 'string)
         ((bool-literal? expr) 'bool)
+        ((array-literal? expr)
+         (let ((elements (ast-get expr 'elements)))
+           (if (null? elements)
+               '(array-type int)
+               (list 'array-type (infer-type (car elements))))))
+        ((index-expr? expr)
+         (let ((obj-type (infer-type (ast-get expr 'object))))
+           (if (and (pair? obj-type) (eq? (car obj-type) 'array-type))
+               (cadr obj-type)
+               'void)))
         ((identifier? expr)
          (let ((name (ast-get expr 'name)))
            (or (hashtable-ref *local-types* name #f)
@@ -89,12 +105,48 @@
        (let ((idx (hashtable-ref *local-vars* name #f)))
          (if idx
              (let ((t (hashtable-ref *local-types* name 'int)))
-               (case t
-                 ((float) (emit port "    fload " idx))
-                 ((string) (emit port "    aload " idx))
-                 (else (emit port "    iload " idx))))
+               (if (pair? t)
+                   (emit port "    aload " idx)
+                   (case t
+                     ((float) (emit port "    fload " idx))
+                     ((string) (emit port "    aload " idx))
+                     (else (emit port "    iload " idx)))))
              (let ((t (hashtable-ref *global-vars* name 'int)))
                (emit port "    getstatic Main/" name " " (type->jasmin t)))))))
+               
+    ((array-literal? expr)
+     (let* ((elements (ast-get expr 'elements))
+            (len (length elements))
+            (elem-type (if (> len 0) (infer-type (car elements)) 'int)))
+       (emit port "    ldc " len)
+       (case elem-type
+         ((float) (emit port "    newarray float"))
+         ((string) (emit port "    anewarray java/lang/String"))
+         ((bool) (emit port "    newarray boolean"))
+         (else (emit port "    newarray int")))
+       (let loop ((i 0) (elems elements))
+         (if (not (null? elems))
+             (begin
+               (emit port "    dup")
+               (emit port "    ldc " i)
+               (generate-expr port (car elems))
+               (case elem-type
+                 ((float) (emit port "    fastore"))
+                 ((string) (emit port "    aastore"))
+                 (else (emit port "    iastore")))
+               (loop (+ i 1) (cdr elems)))))))
+               
+    ((index-expr? expr)
+     (let* ((obj (ast-get expr 'object))
+            (idx (ast-get expr 'index))
+            (obj-type (infer-type obj))
+            (elem-type (if (and (pair? obj-type) (eq? (car obj-type) 'array-type)) (cadr obj-type) 'int)))
+       (generate-expr port obj)
+       (generate-expr port idx)
+       (case elem-type
+         ((float) (emit port "    faload"))
+         ((string) (emit port "    aaload"))
+         (else (emit port "    iaload")))))
                
     ((unary-expr? expr)
      (let ((op (ast-get expr 'operator))
@@ -127,6 +179,7 @@
          ((subtract)  (if (eq? t 'float) (emit port "    fsub") (emit port "    isub")))
          ((multiply)  (if (eq? t 'float) (emit port "    fmul") (emit port "    imul")))
          ((divide)    (if (eq? t 'float) (emit port "    fdiv") (emit port "    idiv")))
+         ((modulo)    (if (eq? t 'float) (emit port "    frem") (emit port "    irem")))
          ((and)       (emit port "    iand"))
          ((or)        (emit port "    ior"))
          ((less-than greater-than less-equal greater-equal equal not-equal)
@@ -188,19 +241,31 @@
                
     ((assign-expr? expr)
      (let* ((target (ast-get expr 'target))
-            (name (ast-get target 'name))
             (val (ast-get expr 'value))
             (t (infer-type val)))
-       (generate-expr port val)
-       (emit port "    dup")
-       (let ((idx (hashtable-ref *local-vars* name #f)))
-         (if idx
+       (if (index-expr? target)
+           (begin
+             (generate-expr port (ast-get target 'object))
+             (generate-expr port (ast-get target 'index))
+             (generate-expr port val)
+             (emit port "    dup_x2")
              (case t
-               ((float) (emit port "    fstore " idx))
-               ((string) (emit port "    astore " idx))
-               (else (emit port "    istore " idx)))
-             (begin
-               (emit port "    putstatic Main/" name " " (type->jasmin t)))))))
+               ((float) (emit port "    fastore"))
+               ((string) (emit port "    aastore"))
+               (else (emit port "    iastore"))))
+           (let ((name (ast-get target 'name)))
+             (generate-expr port val)
+             (emit port "    dup")
+             (let ((idx (hashtable-ref *local-vars* name #f)))
+               (if idx
+                   (if (pair? t)
+                       (emit port "    astore " idx)
+                       (case t
+                         ((float) (emit port "    fstore " idx))
+                         ((string) (emit port "    astore " idx))
+                         (else (emit port "    istore " idx))))
+                   (begin
+                     (emit port "    putstatic Main/" name " " (type->jasmin t)))))))))
     ))
 
 ; Generates Jasmin bytecode instructions for statement nodes (if, while, for, variable declarations)
@@ -229,10 +294,12 @@
                      (hashtable-set! *local-vars* name idx)
                      (set! *next-local* (+ *next-local* 1))))
                (hashtable-set! *local-types* name t)
-               (case t
-                 ((float) (emit port "    fstore " idx))
-                 ((string) (emit port "    astore " idx))
-                 (else (emit port "    istore " idx))))))))
+               (if (pair? t)
+                   (emit port "    astore " idx)
+                   (case t
+                     ((float) (emit port "    fstore " idx))
+                     ((string) (emit port "    astore " idx))
+                     (else (emit port "    istore " idx)))))))))
                    
     ((if-stmt? stmt)
      (let ((cond-expr (ast-get stmt 'condition))

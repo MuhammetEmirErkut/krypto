@@ -81,6 +81,15 @@
   (make-ast-node 'null-literal
                  'location (make-location line col)))
 
+;; Array literal expression
+;; (array-literal elements location)
+
+(define (make-array-literal elements line col)
+  "Create an array literal node"
+  (make-ast-node 'array-literal
+                 'elements elements
+                 'location (make-location line col)))
+
 ;; Identifier expression
 ;; (identifier name location)
 
@@ -301,7 +310,7 @@
 ;; (named-type name location)
 
 (define (make-named-type name line col)
-  "Create a named type node (struct, trait)"
+  "Create a named type node (struct)"
   (make-ast-node 'named-type
                  'name name
                  'location (make-location line col)))
@@ -333,12 +342,15 @@
 (define (string-literal? node) (eq? (ast-type node) 'string-literal))
 (define (bool-literal? node) (eq? (ast-type node) 'bool-literal))
 (define (null-literal? node) (eq? (ast-type node) 'null-literal))
+(define (array-literal? node) (eq? (ast-type node) 'array-literal))
+
 (define (literal? node)
   (or (integer-literal? node)
       (float-literal? node)
       (string-literal? node)
       (bool-literal? node)
-      (null-literal? node)))
+      (null-literal? node)
+      (array-literal? node)))
 
 (define (identifier? node) (eq? (ast-type node) 'identifier))
 (define (binary-expr? node) (eq? (ast-type node) 'binary-expr))
@@ -399,6 +411,13 @@
       
       ((null-literal? node)
        (display "(null-literal)\n"))
+      
+      ((array-literal? node)
+       (display "(array-literal\n")
+       (for-each (lambda (el) (ast-print-helper el (+ indent 1)))
+                 (ast-get node 'elements))
+       (display indent-str)
+       (display ")\n"))
       
       ; Identifier
       ((identifier? node)

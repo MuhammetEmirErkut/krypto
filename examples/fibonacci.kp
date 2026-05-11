@@ -1,7 +1,7 @@
 // Krypto Programming Language - Fibonacci Example
 // Calculate the nth Fibonacci number
 
-int fun fibonacci(n: int) {
+fun fibonacci(n: int) -> int {
     if (n <= 1) {
         return n;
     }
