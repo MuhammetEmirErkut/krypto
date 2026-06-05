@@ -2,7 +2,7 @@
 // This is the first example program in Krypto
 
 fun main() {
-    let message = "Hello, World!";
+    let message: string = "Hello, World!";
     print(message);
     
     // Variables and arithmetic
