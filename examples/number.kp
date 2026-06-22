@@ -1,7 +1,7 @@
 fun main(){
 
- let x: int = 10;
- let y: int = 20;
- 
- print(x+y);
+ let name: int = "test";
+ for(let i:int = 0; i<3;i = i+1){
+  print(name);
+ }
 }

@@ -1,0 +1,4 @@
+fun main(){
+	let arr: int[] = [1,2,4,5];
+	print(arr[1] + arr[3]);
+}
